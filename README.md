@@ -41,7 +41,7 @@ while not all(done):
 
 
 ## Citation
-If you use this repository in your research or wish to cite it, please make a referenct to our IEEE paper: 
+If you use this repository in your research or wish to cite it, please make a reference to our IEEE paper: 
 ```
 @article{skrynnik2021hybrid,
   title={Hybrid Policy Learning for Multi-Agent Pathfinding},
