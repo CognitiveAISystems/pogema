@@ -7,7 +7,9 @@
 
 [![CodeFactor](https://www.codefactor.io/repository/github/tviskaron/pogema/badge)](https://www.codefactor.io/repository/github/tviskaron/pogema)
 [![Downloads](https://pepy.tech/badge/pogema)](https://pepy.tech/project/pogema)
-[![CI](https://github.com/AIRI-Institute/pogema/actions/workflows/CI.yml/badge.svg?branch=main)](https://github.com/AIRI-Institute/pogema/actions/workflows/CI.yml)    
+[![CI](https://github.com/AIRI-Institute/pogema/actions/workflows/CI.yml/badge.svg?branch=main)](https://github.com/AIRI-Institute/pogema/actions/workflows/CI.yml) 
+[![CodeQL](https://github.com/AIRI-Institute/pogema/actions/workflows/codeql-analysis.yml/badge.svg)](https://github.com/AIRI-Institute/pogema/actions/workflows/codeql-analysis.yml)    
+    
 </div> 
 
 Pogema is a high-throughput environment for partially observable multi-agent pathfinding tasks (PO-MAPF). Pogema is especially flexible, tunable and scalable environment, which can be tailored to a variety of MAPF settings.
