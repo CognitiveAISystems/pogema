@@ -12,7 +12,11 @@
     
 </div> 
 
-Pogema is a high-throughput environment for partially observable multi-agent pathfinding tasks (PO-MAPF). Pogema is especially flexible, tunable and scalable environment, which can be tailored to a variety of MAPF settings.
+Partially observable multi-agent pathfing (PO-MAPF) is a challenging problem which fundamentally differs from regular MAPF, in which a central controller is assumed to construct a joint plan for all agents before they start execution. PO-MAPF is intrisically decentralized and decision making (e.g. planning) here is interleaved with the execution. At each time step an agent receives a (local) observation of the environment and decides which action to take. The ultimate goal for the agents is to reach their goals while avoiding collisions with each other and the static obstacles.
+
+POGEMA stands for Partially-Observable Grid Environment for Multiple Agents. This is a grid-based environment that was specifically designed to be flexible, tunable and scalable. It can be tailored to a variety of PO-MAPF settings. Currently the (somewhat) standard setting is supported: agents can move between the cardinally-adjacent cells of the grid, each action (move or wait) takes one time step. No information sharing between the agents is happening.
+
+POGEMA can generate random maps and start/goals locations for the agents. It also can take custom maps as the input.
 
 ## Installation
 
@@ -55,3 +59,4 @@ If you use this repository in your research or wish to cite it, please make a re
   publisher={IEEE}
 }
 ```
+We are also planning to write a separate paper (pre-print) dedicated to POGEMA entirely. The reference will appear here soon.
