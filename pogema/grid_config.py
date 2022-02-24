@@ -1,7 +1,8 @@
 import sys
-from typing import Optional, Union, Literal
+from typing import Optional, Union
 import numpy as np
 from pydantic import BaseModel, validator
+from typing_extensions import Literal
 
 
 class GridConfig(BaseModel, ):
