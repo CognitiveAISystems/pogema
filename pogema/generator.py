@@ -189,7 +189,7 @@ def generate_positions_and_targets_fast(obstacles, grid_config):
 
     start_id = max(c.FREE, c.OBSTACLE) + 1
 
-    components = bfs(grid, c.MOVES, c.size, start_id, free_cell=c.FREE)
+    components = bfs(grid, tuple(c.MOVES), c.size, start_id, free_cell=c.FREE)
     height, width = obstacles.shape
     order = [(x, y) for x in range(height) for y in range(width) if grid[x, y] >= start_id]
     np.random.default_rng(c.seed).shuffle(order)
