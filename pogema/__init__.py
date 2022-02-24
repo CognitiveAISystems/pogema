@@ -12,7 +12,7 @@ register(
     entry_point="pogema.envs:Pogema",
 )
 
-register(
-    id='PogemaCoopFinish-v0',
-    entry_point="pogema.envs:PogemaCoopFinish"
-)
+# register(
+#     id='PogemaCoopFinish-v0',
+#     entry_point="pogema.envs:PogemaCoopFinish"
+# )
