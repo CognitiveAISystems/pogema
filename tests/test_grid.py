@@ -144,3 +144,29 @@ def test_overflow_for_custom_map():
     ]
     with pytest.raises(OverflowError):
         Grid(GridConfig(obs_radius=2, size=4, num_agents=5, density=0.3, map=test_map), num_retries=100)
+
+
+def test_str_custom_map():
+    grid_map = """
+        .a...#.....
+        .....#.....
+        ..C.....b..
+        .....#.....
+        .....#.....
+        #.####.....
+        .....###.##
+        .....#.....
+        .c...#.....
+        .B.......A.
+        .....#.....
+    """
+    grid = Grid(GridConfig(obs_radius=2, size=4, num_agents=5, density=0.3, map=grid_map))
+    assert (grid.config.num_agents == 3)
+    assert (np.isclose(0.1404958, grid.config.density))
+    assert (np.isclose(11, grid.config.size))
+
+    grid_map = """.....#...."""
+    grid = Grid(GridConfig(seed=2, num_agents=3, map=grid_map))
+    assert (grid.config.num_agents == 3)
+    assert (np.isclose(0.1, grid.config.density))
+    assert (np.isclose(10, grid.config.size))

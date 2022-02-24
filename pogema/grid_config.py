@@ -1,22 +1,24 @@
 import sys
-from typing import Optional
-
+from typing import Optional, Union, Literal
 import numpy as np
 from pydantic import BaseModel, validator
 
 
-class GridConfig(BaseModel):
-    FREE = 0
-    OBSTACLE = 1
-    MOVES = tuple([(0, 0), (-1, 0), (1, 0), (0, -1), (0, 1), ])
+class GridConfig(BaseModel, ):
+    FREE: Literal[0] = 0
+    OBSTACLE: Literal[1] = 1
+    MOVES: list = [[0, 0], [-1, 0], [1, 0], [0, -1], [0, 1], ]
     seed: Optional[int] = None
     size: int = 8
     density: float = 0.3
     num_agents: int = 1
     obs_radius: int = 5
-    map: list = None
+    agents_xy: list = None
+    targets_xy: list = None
 
-    disappear_on_goal: bool = True
+    map: Union[list, str] = None
+
+    disappear_on_goal: Literal[True] = True
     empty_outside: bool = True
 
     map_name: str = None
@@ -48,10 +50,16 @@ class GridConfig(BaseModel):
         assert 1 <= v <= 128, "obs_radius must be in [1, 128]"
         return v
 
-    @validator('map')
-    def map_validation(cls, v, values):
+    @validator('map', always=True)
+    def map_validation(cls, v, values, ):
         if v is None:
             return None
+        if isinstance(v, str):
+            v, agents_xy, targets_xy = cls.str_map_to_list(v, values['FREE'], values['OBSTACLE'])
+            if agents_xy and targets_xy:
+                values['agents_xy'] = agents_xy
+                values['targets_xy'] = targets_xy
+                values['num_agents'] = len(agents_xy)
         size = len(v)
         area = 0
         for line in v:
@@ -59,7 +67,6 @@ class GridConfig(BaseModel):
             area += len(line)
         values['size'] = size
         values['density'] = sum([sum(line) for line in v]) / area
-
         return v
 
     def get_short_description(self):
@@ -73,3 +80,38 @@ class GridConfig(BaseModel):
 
         description += f'agents:{self.num_agents};size:{self.size};density:{self.density};radius:{self.obs_radius};'
         return description
+
+    @staticmethod
+    def str_map_to_list(str_map, free, obstacle):
+        obstacles = []
+        agents = {}
+        targets = {}
+        for idx, line in enumerate(str_map.split()):
+            row = []
+            for char in line:
+                if char == '.':
+                    row.append(free)
+                elif char == '#':
+                    row.append(obstacle)
+                elif 'A' <= char <= 'Z':
+                    targets[char.lower()] = len(obstacles), len(row)
+                    row.append(free)
+                elif 'a' <= char <= 'z':
+                    agents[char.lower()] = len(obstacles), len(row)
+                    row.append(free)
+                else:
+                    raise KeyError(f"Unsupported symbol '{char}' at line {idx}")
+            if row:
+                if obstacles:
+                    assert len(obstacles[-1]) == len(row), f"Wrong string size for row {idx};"
+                obstacles.append(row)
+
+        targets_xy = []
+        agents_xy = []
+        for _, (x, y) in sorted(agents.items()):
+            agents_xy.append([x, y])
+        for _, (x, y) in sorted(targets.items()):
+            targets_xy.append([x, y])
+
+        assert len(targets_xy) == len(agents_xy)
+        return obstacles, agents_xy, targets_xy

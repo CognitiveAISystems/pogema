@@ -36,3 +36,11 @@ def test_moving():
 
     assert np.isclose([1.0, 0.0], reward).all()
     assert np.isclose([True, False], done).all()
+
+
+def test_types():
+    env = Pogema(config=GridConfig(num_agents=2, size=6, obs_radius=2, density=0.3, seed=42))
+    obs = env.reset()
+
+    # todo replace float64 with float32 in grid and add tests
+    # print(obs[0].dtype)

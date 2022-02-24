@@ -20,9 +20,12 @@ class Grid:
 
         if self.config.map is None:
             obstacles = generate_obstacles(self.config)
-            starts_xy, finishes_xy = generate_positions_and_targets_fast(obstacles, self.config)
         else:
             obstacles = np.array([np.array(line) for line in self.config.map])
+
+        if grid_config.targets_xy and grid_config.agents_xy:
+            starts_xy, finishes_xy = grid_config.agents_xy, grid_config.targets_xy
+        else:
             starts_xy, finishes_xy = generate_positions_and_targets_fast(obstacles, self.config)
 
         if len(starts_xy) != len(finishes_xy):
