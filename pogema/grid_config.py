@@ -30,8 +30,6 @@ class GridConfig(BaseModel, ):
     @validator('seed')
     def seed_initialization(cls, v):
         assert v is None or (0 <= v < sys.maxsize), "seed must be in [0, " + str(sys.maxsize) + ']'
-        if v is None:
-            return int(np.random.randint(sys.maxsize, dtype=np.int64))
         return v
 
     @validator('size')
