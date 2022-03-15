@@ -1,4 +1,7 @@
+from functools import reduce
 from typing import Union
+
+import gym
 
 from pogema import GridConfig
 from pogema.envs import Pogema
@@ -10,20 +13,17 @@ from pogema.wrappers.sf_integration import AutoResetWrapper, IsMultiAgentWrapper
 
 
 def _make_pogema(grid_config):
-    env = Pogema(config=grid_config)  # all
-    env = GlobalStateInfo(env)  # all
-    env = MultiTimeLimit(env, grid_config.max_episode_steps)  # all
-    env = MetricsWrapper(env)  # all
+    env = Pogema(config=grid_config)
+    env = GlobalStateInfo(env)
+    env = MultiTimeLimit(env, grid_config.max_episode_steps)
+    env = MetricsWrapper(env)
 
     return env
 
 
 def _make_sample_factory_integration(grid_config):
-    env = Pogema(config=grid_config)  # all
-    env = GlobalStateInfo(env)  # all
-    env = MultiTimeLimit(env, grid_config.max_episode_steps)  # all
-
-    env = MetricsWrapper(env, group_name='episode_extra_stats')  # group name for sample factory
+    env = _make_pogema(grid_config)
+    env.update_group_name(group_name='episode_extra_stats')
     env = IsMultiAgentWrapper(env)
     env = AutoResetWrapper(env)  # sample factory
 
@@ -31,8 +31,7 @@ def _make_sample_factory_integration(grid_config):
 
 
 def _make_py_marl_integration(grid_config, *args, **kwargs):
-    env = _make_pogema(grid_config)
-    return PyMarlPogema(env, grid_config)
+    return PyMarlPogema(_make_pogema(grid_config), grid_config)
 
 
 def _make_sb3_integration(grid_config):
@@ -43,8 +42,21 @@ def _make_rllib_integration(grid_config):
     raise NotImplementedError
 
 
+class SingleAgentWrapper(gym.Wrapper):
+
+    def step(self, action):
+        observations, rewards, dones, infos = self.env.step([action])
+        return observations[0], rewards[0], dones[0], infos[0]
+
+    def reset(self):
+        return self.env.reset()[0]
+
+
 def _make_single_agent_gym(grid_config):
-    raise NotImplementedError
+    env = _make_pogema(grid_config)
+    env = SingleAgentWrapper(env)
+
+    return env
 
 
 def make_pogema(grid_config: Union[GridConfig, dict] = GridConfig(), *args, **kwargs):
@@ -69,9 +81,7 @@ def make_pogema(grid_config: Union[GridConfig, dict] = GridConfig(), *args, **kw
 
 
 def main():
-    env = _make_sample_factory_integration(GridConfig(num_agents=10))
-    env.reset()
-    print(env.num_agents)
+    pass
 
 
 if __name__ == '__main__':

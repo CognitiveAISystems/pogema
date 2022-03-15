@@ -24,7 +24,7 @@ class GridConfig(BaseModel, ):
 
     map_name: str = None
 
-    integration: Literal['SampleFactory', 'PyMARL', 'StableBaselines3', 'rllib'] = None
+    integration: Literal['SampleFactory', 'PyMARL', 'StableBaselines3', 'rllib', 'single_agent_gym'] = None
     max_episode_steps: int = 64
 
     @validator('seed')
