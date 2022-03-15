@@ -11,6 +11,7 @@ class PyMarlPogema:
         self._grid_config: GridConfig = gc
         gc.seed = None
 
+        self.env = env
         self._mh_distance = mh_distance
         self._observations = self.env.reset()
         self.max_episode_steps = gc.max_episode_steps

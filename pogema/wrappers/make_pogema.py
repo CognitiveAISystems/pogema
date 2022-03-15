@@ -51,21 +51,21 @@ def make_pogema(grid_config: Union[GridConfig, dict] = GridConfig(), *args, **kw
     if isinstance(grid_config, dict):
         grid_config = GridConfig(**grid_config)
 
-    if grid_config.integrations is None:
+    if grid_config.integration is None:
         return _make_pogema(grid_config)
-    elif grid_config.integrations == 'SampleFactory':
+    elif grid_config.integration == 'SampleFactory':
         return _make_sample_factory_integration(grid_config)
-    elif grid_config.integrations == 'PyMARL':
+    elif grid_config.integration == 'PyMARL':
         return _make_py_marl_integration(grid_config, *args, **kwargs)
-    elif grid_config.integrations == 'StableBaselines3':
+    elif grid_config.integration == 'StableBaselines3':
         return _make_sb3_integration(grid_config)
-    elif grid_config.integrations == 'rllib':
+    elif grid_config.integration == 'rllib':
         return _make_rllib_integration(grid_config)
-    elif grid_config.integrations == 'single_agent_gym':
+    elif grid_config.integration == 'single_agent_gym':
         assert grid_config.num_agents == 1
         return _make_single_agent_gym
     else:
-        raise KeyError(grid_config.integrations)
+        raise KeyError(grid_config.integration)
 
 
 def main():
