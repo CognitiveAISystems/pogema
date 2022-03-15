@@ -24,6 +24,9 @@ class GridConfig(BaseModel, ):
 
     map_name: str = None
 
+    integrations: Literal['SampleFactory', 'PyMARL', 'StableBaselines3', 'rllib'] = None
+    max_episode_steps: int = 64
+
     @validator('seed')
     def seed_initialization(cls, v):
         assert v is None or (0 <= v < sys.maxsize), "seed must be in [0, " + str(sys.maxsize) + ']'
