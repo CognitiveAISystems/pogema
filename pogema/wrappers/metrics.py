@@ -7,6 +7,9 @@ class MetricsWrapper(gym.Wrapper):
         self._ISR = None
         self._group_name = group_name
 
+    def update_group_name(self, group_name):
+        self._group_name = group_name
+
     def step(self, action):
         obs, reward, done, infos = self.env.step(action)
 

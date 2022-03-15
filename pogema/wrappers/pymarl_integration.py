@@ -103,3 +103,6 @@ class PyMarlPogema:
 
     def close(self):
         return
+
+    def sample_actions(self ):
+        return self.env.sample_actions()
