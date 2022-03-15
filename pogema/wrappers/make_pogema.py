@@ -63,9 +63,9 @@ def make_pogema(grid_config: Union[GridConfig, dict] = GridConfig(), *args, **kw
         return _make_rllib_integration(grid_config)
     elif grid_config.integration == 'single_agent_gym':
         assert grid_config.num_agents == 1
-        return _make_single_agent_gym
-    else:
-        raise KeyError(grid_config.integration)
+        return _make_single_agent_gym(grid_config)
+
+    raise KeyError(grid_config.integration)
 
 
 def main():

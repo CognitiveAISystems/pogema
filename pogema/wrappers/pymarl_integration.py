@@ -1,4 +1,3 @@
-import gym
 import numpy as np
 
 from pogema import GridConfig
@@ -19,7 +18,6 @@ class PyMarlPogema:
         self.n_agents = self.env.get_num_agents()
 
     def step(self, actions):
-        """ Returns reward, terminated, info """
         self._observations, rewards, dones, infos = self.env.step(actions)
         info = {}
         if all(dones):
@@ -31,14 +29,10 @@ class PyMarlPogema:
         return sum(rewards), all(dones), info
 
     def get_obs(self):
-        """ Returns all agent observations in a list """
         return np.array([self.get_obs_agent(agent_id) for agent_id in range(self.n_agents)])
-        # return self._observations
 
     def get_obs_agent(self, agent_id):
-        """ Returns observation for agent_id """
         return np.array(self._observations[agent_id]).flatten()
-        # return self._observations[agent_id]
 
     def normalize_coordinates(self, coordinates):
         x, y = coordinates
@@ -71,8 +65,6 @@ class PyMarlPogema:
         return result
 
     def get_state_size(self):
-        """ Returns the shape of the state"""
-        # return 5*self._grid_config.num_agents+self.env.grid.obstacles.shape[0]*self.env.grid.obstacles.shape[1]
         return len(self.get_state())
 
     def get_avail_actions(self):
