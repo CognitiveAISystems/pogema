@@ -11,7 +11,7 @@ class PogemaBase(gym.Env):
     def step(self, action):
         raise NotImplementedError
 
-    def reset(self):
+    def reset(self, **kwargs):
         raise NotImplementedError
 
     def __init__(self, config: GridConfig = GridConfig()):
@@ -37,6 +37,9 @@ class PogemaBase(gym.Env):
     def render(self, mode='human'):
         self.check_reset()
         return self.grid.render(mode=mode)
+
+    def get_num_agents(self):
+        return self.config.num_agents
 
 
 # class PogemaCoopFinish(PogemaBase):
@@ -113,7 +116,7 @@ class Pogema(PogemaBase):
         obs = self._obs()
         return obs, rewards, dones, infos
 
-    def reset(self):
+    def reset(self, **kwargs):
         self.grid: Grid = Grid(grid_config=self.config)
         self.active = {agent_idx: True for agent_idx in range(self.config.num_agents)}
         return self._obs()
