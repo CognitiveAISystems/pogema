@@ -1,7 +1,6 @@
 import numpy as np
 
 from pogema.grid import GridConfig
-from pogema.envs import Pogema
 from pogema.wrappers.make_pogema import make_pogema
 
 
@@ -14,7 +13,7 @@ class ActionMapping:
 
 
 def test_moving():
-    env = Pogema(config=GridConfig(num_agents=2, size=6, obs_radius=2, density=0.3, seed=42))
+    env = make_pogema(GridConfig(num_agents=2, size=6, obs_radius=2, density=0.3, seed=42))
     ac = ActionMapping()
     env.reset()
 
@@ -40,7 +39,7 @@ def test_moving():
 
 
 def test_types():
-    env = Pogema(config=GridConfig(num_agents=2, size=6, obs_radius=2, density=0.3, seed=42))
+    env = make_pogema(GridConfig(num_agents=2, size=6, obs_radius=2, density=0.3, seed=42))
     obs = env.reset()
 
     # todo replace float64 with float32 in grid and add tests
