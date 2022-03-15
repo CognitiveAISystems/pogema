@@ -30,8 +30,9 @@ def _make_sample_factory_integration(grid_config):
     return env
 
 
-def _make_py_marl_integration(grid_config):
-    return PyMarlPogema(grid_config)
+def _make_py_marl_integration(grid_config, *args, **kwargs):
+    env = _make_pogema(grid_config)
+    return PyMarlPogema(env, grid_config)
 
 
 def _make_sb3_integration(grid_config):
@@ -46,15 +47,16 @@ def _make_single_agent_gym(grid_config):
     raise NotImplementedError
 
 
-def make_pogema(grid_config: Union[GridConfig, dict] = GridConfig()):
+def make_pogema(grid_config: Union[GridConfig, dict] = GridConfig(), *args, **kwargs):
+    if isinstance(grid_config, dict):
+        grid_config = GridConfig(**grid_config)
+
     if grid_config.integrations is None:
         return _make_pogema(grid_config)
     elif grid_config.integrations == 'SampleFactory':
         return _make_sample_factory_integration(grid_config)
     elif grid_config.integrations == 'PyMARL':
-        if isinstance(grid_config, dict):
-            grid_config = GridConfig(**grid_config)
-        return _make_py_marl_integration(grid_config)
+        return _make_py_marl_integration(grid_config, *args, **kwargs)
     elif grid_config.integrations == 'StableBaselines3':
         return _make_sb3_integration(grid_config)
     elif grid_config.integrations == 'rllib':
@@ -70,6 +72,7 @@ def main():
     env = _make_sample_factory_integration(GridConfig(num_agents=10))
     env.reset()
     print(env.num_agents)
+
 
 if __name__ == '__main__':
     main()
