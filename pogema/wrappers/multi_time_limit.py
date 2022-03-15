@@ -8,5 +8,5 @@ class MultiTimeLimit(TimeLimit):
         if self._elapsed_steps >= self._max_episode_steps:
             for agent_idx in range(self.env.get_num_agents()):
                 info[agent_idx]["TimeLimit.truncated"] = not done[agent_idx]
-            done = [True] * self.num_agents
+            done = [True] * self.env.get_num_agents()
         return observation, reward, done, info
