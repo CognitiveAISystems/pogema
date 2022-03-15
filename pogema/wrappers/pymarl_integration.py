@@ -73,6 +73,7 @@ class PyMarlPogema:
             actions.append(self.get_avail_agent_actions(i))
         return actions
 
+    # noinspection PyUnusedLocal
     @staticmethod
     def get_avail_agent_actions(agent_id):
         return list(range(5))
@@ -98,11 +99,12 @@ class PyMarlPogema:
                     }
         return env_info
 
-    def get_stats(self):
+    @staticmethod
+    def get_stats():
         return {}
 
     def close(self):
         return
 
-    def sample_actions(self ):
+    def sample_actions(self):
         return self.env.sample_actions()

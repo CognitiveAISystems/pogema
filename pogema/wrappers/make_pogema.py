@@ -1,4 +1,3 @@
-from functools import reduce
 from typing import Union
 
 import gym
@@ -30,7 +29,7 @@ def _make_sample_factory_integration(grid_config):
     return env
 
 
-def _make_py_marl_integration(grid_config, *args, **kwargs):
+def _make_py_marl_integration(grid_config, *_, **__):
     return PyMarlPogema(_make_pogema(grid_config), grid_config)
 
 
