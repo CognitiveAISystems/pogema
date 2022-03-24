@@ -2,7 +2,7 @@ import numpy as np
 import gym
 from gym.error import ResetNeeded
 
-from pogema.grid import Grid, CooperativeGrid
+from pogema.grid import Grid
 from pogema.grid_config import GridConfig
 
 
