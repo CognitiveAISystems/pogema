@@ -39,9 +39,12 @@ def _make_single_agent_gym(grid_config):
     return env
 
 
-def make_pogema(grid_config: Union[GridConfig, dict] = GridConfig(), *args, **kwargs):
+def make_pogema(grid_config: Union[GridConfig, dict] = GridConfig(), integration=None, *args, **kwargs):
     if isinstance(grid_config, dict):
         grid_config = GridConfig(**grid_config)
+
+    if integration:
+        grid_config.integration = integration
 
     if grid_config.integration is None:
         return _make_pogema(grid_config)
