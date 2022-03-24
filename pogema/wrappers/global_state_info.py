@@ -3,12 +3,11 @@ from copy import deepcopy
 import gym
 
 from pogema import GridConfig
-from pogema.envs import Pogema
 import numpy as np
 
 
 class GlobalStateInfo(gym.Wrapper):
-    def __init__(self, env: Pogema):
+    def __init__(self, env):
         super().__init__(env)
 
     def get_obstacles(self, ignore_borders=False):
@@ -71,38 +70,3 @@ class GlobalStateInfo(gym.Wrapper):
             return {"obstacles": obstacles, "agents_xy": agents_xy, "targets_xy": targets_xy}
 
         return np.concatenate(list(map(lambda x: np.array(x).flatten(), [agents_xy, targets_xy, obstacles])))
-
-
-def main():
-    pogema_map = """
-    a.#.#.
-    A.#.#.
-    #.#.#.
-    .#.#.#
-    .#.#z.
-    .#.#..
-    .#.#.#
-    #.#.#.
-    #.#Z#.
-    #.#.#.
-    """
-    env = Pogema(config=GridConfig(map=pogema_map, obs_radius=3))
-    env = GlobalStateInfo(env)
-    env.reset()
-
-    # print(env.get_targets_xy())
-    obstacles = env.get_obstacles(ignore_borders=True)
-    x, y = env.get_agents_xy(ignore_borders=True)[0]
-    tx, ty = env.get_targets_xy(ignore_borders=True)[0]
-    obstacles[x, y] = 2.0
-    obstacles[tx, ty] = 3.0
-    print(obstacles)
-
-    for _ in range(100):
-        env.step([env.action_space.sample() for _ in range(env.config.num_agents)])
-        print(env.get_agents_xy(ignore_borders=True, only_active=True),
-              env.get_targets_xy(ignore_borders=True, only_active=True))
-
-
-if __name__ == '__main__':
-    main()

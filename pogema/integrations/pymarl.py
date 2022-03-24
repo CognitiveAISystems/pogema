@@ -1,15 +1,16 @@
 import numpy as np
 
 from pogema import GridConfig
+from pogema.envs import _make_pogema
 
 
 class PyMarlPogema:
 
-    def __init__(self, env, grid_config, mh_distance=False):
+    def __init__(self, grid_config, mh_distance=False):
         gc = grid_config
         self._grid_config: GridConfig = gc
 
-        self.env = env
+        self.env = _make_pogema(grid_config)
         self._mh_distance = mh_distance
         self._observations = self.env.reset()
         self.max_episode_steps = gc.max_episode_steps

@@ -1,7 +1,7 @@
 import numpy as np
 
 from pogema.grid import GridConfig
-from pogema.wrappers.make_pogema import make_pogema
+from pogema.integrations.make_pogema import make_pogema
 
 
 class ActionMapping:

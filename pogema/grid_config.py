@@ -1,6 +1,5 @@
 import sys
 from typing import Optional, Union
-import numpy as np
 from pydantic import BaseModel, validator
 from typing_extensions import Literal
 
@@ -24,7 +23,7 @@ class GridConfig(BaseModel, ):
 
     map_name: str = None
 
-    integration: Literal['SampleFactory', 'PyMARL', 'StableBaselines3', 'rllib', 'single_agent_gym'] = None
+    integration: Literal['SampleFactory', 'PyMARL', 'rllib', 'gym', 'PettingZoo'] = None
     max_episode_steps: int = 64
 
     @validator('seed')

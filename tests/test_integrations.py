@@ -1,9 +1,27 @@
 from functools import reduce
 
 import numpy as np
+import pytest
 
 from pogema import GridConfig
-from pogema.wrappers.make_pogema import make_pogema
+from pogema.integrations.make_pogema import make_pogema
+from pettingzoo.utils import parallel_to_aec
+from pettingzoo.test import api_test, parallel_api_test, render_test
+
+
+def test_create_all_integrations():
+    for integration in ['SampleFactory', 'PyMARL', 'PettingZoo']:
+        env = make_pogema(GridConfig(seed=7, num_agents=4, size=10, integration=integration))
+        env.reset()
+
+    env = make_pogema(GridConfig(num_agents=1, size=5, integration='gym'))
+    env.reset()
+
+    with pytest.raises(AssertionError):
+        make_pogema(GridConfig(num_agents=2, integration='gym'))
+
+    with pytest.raises(NotImplementedError):
+        make_pogema(GridConfig(integration='rllib'))
 
 
 def test_sample_factory_integration():
@@ -65,7 +83,7 @@ def test_pymarl_integration():
 
 
 def test_single_agent_gym_integration():
-    gc = GridConfig(seed=7, num_agents=1, integration='single_agent_gym')
+    gc = GridConfig(seed=7, num_agents=1, integration='gym')
     env = make_pogema(gc)
 
     obs = env.reset()
@@ -82,3 +100,14 @@ def test_single_agent_gym_integration():
         assert isinstance(done, bool)
         assert isinstance(info, dict)
         cnt += 1
+
+
+def test_petting_zoo():
+    gc = GridConfig(num_agents=16, size=16, integration='PettingZoo')
+
+    def env(grid_config: GridConfig = GridConfig(num_agents=20, size=16)):
+        return parallel_to_aec(make_pogema(grid_config))
+
+    parallel_api_test(make_pogema(gc), num_cycles=1000)
+    api_test(env(gc), num_cycles=1000, verbose_progress=True)
+    render_test(env)
