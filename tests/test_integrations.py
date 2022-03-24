@@ -5,12 +5,10 @@ import pytest
 
 from pogema import GridConfig
 from pogema.integrations.make_pogema import make_pogema
-from pettingzoo.utils import parallel_to_aec
-from pettingzoo.test import api_test, parallel_api_test, render_test
 
 
 def test_create_all_integrations():
-    for integration in ['SampleFactory', 'PyMARL', 'PettingZoo']:
+    for integration in ['SampleFactory', 'PyMARL']:
         env = make_pogema(GridConfig(seed=7, num_agents=4, size=10, integration=integration))
         env.reset()
 
@@ -103,11 +101,18 @@ def test_single_agent_gym_integration():
 
 
 def test_petting_zoo():
-    gc = GridConfig(num_agents=16, size=16, integration='PettingZoo')
+    # PettingZoo doesn't support python3.6 and below
+    try:
+        from pettingzoo.utils import parallel_to_aec
+        from pettingzoo.test import api_test, parallel_api_test, render_test
 
-    def env(grid_config: GridConfig = GridConfig(num_agents=20, size=16)):
-        return parallel_to_aec(make_pogema(grid_config))
+        gc = GridConfig(num_agents=16, size=16, integration='PettingZoo')
 
-    parallel_api_test(make_pogema(gc), num_cycles=1000)
-    api_test(env(gc), num_cycles=1000, verbose_progress=True)
-    render_test(env)
+        def env(grid_config: GridConfig = GridConfig(num_agents=20, size=16)):
+            return parallel_to_aec(make_pogema(grid_config))
+
+        parallel_api_test(make_pogema(gc), num_cycles=1000)
+        api_test(env(gc), num_cycles=1000, verbose_progress=True)
+        render_test(env)
+    except ImportError:
+        pass
