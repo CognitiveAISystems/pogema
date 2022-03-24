@@ -101,17 +101,18 @@ def test_single_agent_gym_integration():
 
 
 def test_petting_zoo():
-    # PettingZoo doesn't support python3.6 and below
+    from pettingzoo.test import api_test, parallel_api_test, render_test
+
+    gc = GridConfig(num_agents=16, size=16, integration='PettingZoo')
+
+    parallel_api_test(make_pogema(gc), num_cycles=1000)
+
     try:
         from pettingzoo.utils import parallel_to_aec
-        from pettingzoo.test import api_test, parallel_api_test, render_test
-
-        gc = GridConfig(num_agents=16, size=16, integration='PettingZoo')
 
         def env(grid_config: GridConfig = GridConfig(num_agents=20, size=16)):
             return parallel_to_aec(make_pogema(grid_config))
 
-        parallel_api_test(make_pogema(gc), num_cycles=1000)
         api_test(env(gc), num_cycles=1000, verbose_progress=True)
         render_test(env)
     except ImportError:
