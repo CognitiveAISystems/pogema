@@ -29,15 +29,13 @@ class AnimationSettings(BaseModel):
     stroke_dasharray: int = 25
 
     colors: list = [
+        '#c1433c',
+        '#2e6f9e',
         '#6e81af',
         '#00b9c8',
         '#72D5C8',
         '#0ea08c',
-        '#647b87',
         '#8F7B66',
-        '#2E849E',
-        '#9F9FA8',
-        '#EB996E'
     ]
 
     directory = 'renders/'
