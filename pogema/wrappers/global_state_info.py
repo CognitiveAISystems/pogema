@@ -3,11 +3,11 @@ from copy import deepcopy
 import gym
 
 from pogema import GridConfig
-from pogema.envs import Pogema
+import numpy as np
 
 
 class GlobalStateInfo(gym.Wrapper):
-    def __init__(self, env: Pogema):
+    def __init__(self, env):
         super().__init__(env)
 
     def get_obstacles(self, ignore_borders=False):
@@ -23,6 +23,9 @@ class GlobalStateInfo(gym.Wrapper):
     @staticmethod
     def _filter_inactive(pos, active_flags):
         return [pos for idx, pos in enumerate(pos) if active_flags[idx]]
+
+    def get_grid_config(self):
+        return deepcopy(self._get_grid_config())
 
     def _get_grid_config(self) -> GridConfig:
         return self.env.config
@@ -44,37 +47,26 @@ class GlobalStateInfo(gym.Wrapper):
     def get_targets_xy(self, only_active=False, ignore_borders=False):
         return self._prepare_positions(deepcopy(self.env.grid.finishes_xy), only_active, ignore_borders)
 
+    def _normalize_coordinates(self, coordinates):
+        gc = self._get_grid_config()
 
-def main():
-    pogema_map = """
-    a.#.#.
-    A.#.#.
-    #.#.#.
-    .#.#.#
-    .#.#z.
-    .#.#..
-    .#.#.#
-    #.#.#.
-    #.#Z#.
-    #.#.#.
-    """
-    env = Pogema(config=GridConfig(map=pogema_map, obs_radius=3))
-    env = GlobalStateInfo(env)
-    env.reset()
+        x, y = coordinates
 
-    # print(env.get_targets_xy())
-    obstacles = env.get_obstacles(ignore_borders=True)
-    x, y = env.get_agents_xy(ignore_borders=True)[0]
-    tx, ty = env.get_targets_xy(ignore_borders=True)[0]
-    obstacles[x, y] = 2.0
-    obstacles[tx, ty] = 3.0
-    print(obstacles)
+        x -= gc.obs_radius
+        y -= gc.obs_radius
 
-    for _ in range(100):
-        env.step([env.action_space.sample() for _ in range(env.config.num_agents)])
-        print(env.get_agents_xy(ignore_borders=True, only_active=True),
-              env.get_targets_xy(ignore_borders=True, only_active=True))
+        x /= gc.size - 1
+        y /= gc.size - 1
 
+        return x, y
 
-if __name__ == '__main__':
-    main()
+    def get_state(self, ignore_borders=False, as_dict=False):
+        agents_xy = list(map(self._normalize_coordinates, self.get_agents_xy(ignore_borders)))
+        targets_xy = list(map(self._normalize_coordinates, self.get_targets_xy(ignore_borders)))
+
+        obstacles = self.get_obstacles(ignore_borders)
+
+        if as_dict:
+            return {"obstacles": obstacles, "agents_xy": agents_xy, "targets_xy": targets_xy}
+
+        return np.concatenate(list(map(lambda x: np.array(x).flatten(), [agents_xy, targets_xy, obstacles])))

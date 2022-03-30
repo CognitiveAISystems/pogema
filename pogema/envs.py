@@ -2,8 +2,24 @@ import numpy as np
 import gym
 from gym.error import ResetNeeded
 
-from pogema.grid import Grid, CooperativeGrid
+from pogema.grid import Grid
 from pogema.grid_config import GridConfig
+from pogema.wrappers.global_state_info import GlobalStateInfo
+from pogema.wrappers.metrics import MetricsWrapper
+from pogema.wrappers.multi_time_limit import MultiTimeLimit
+
+
+class ActionsSampler:
+    def __init__(self, num_actions, seed=42):
+        self._num_actions = num_actions
+        self._rnd = None
+        self.update_seed(seed)
+
+    def update_seed(self, seed=None):
+        self._rnd = np.random.default_rng(seed)
+
+    def sample_actions(self, dim=1):
+        return self._rnd.integers(self._num_actions, size=dim)
 
 
 class PogemaBase(gym.Env):
@@ -11,7 +27,7 @@ class PogemaBase(gym.Env):
     def step(self, action):
         raise NotImplementedError
 
-    def reset(self):
+    def reset(self, **kwargs):
         raise NotImplementedError
 
     def __init__(self, config: GridConfig = GridConfig()):
@@ -22,6 +38,7 @@ class PogemaBase(gym.Env):
         full_size = self.config.obs_radius * 2 + 1
         self.observation_space = gym.spaces.Box(0.0, 1.0, shape=(3, full_size, full_size))
         self.action_space = gym.spaces.Discrete(len(self.config.MOVES))
+        self._multi_action_sampler = ActionsSampler(self.action_space.n, seed=self.config.seed)
 
     def _get_agents_obs(self, agent_id=0):
         return np.concatenate([
@@ -37,6 +54,12 @@ class PogemaBase(gym.Env):
     def render(self, mode='human'):
         self.check_reset()
         return self.grid.render(mode=mode)
+
+    def sample_actions(self):
+        return self._multi_action_sampler.sample_actions(dim=self.config.num_agents)
+
+    def get_num_agents(self):
+        return self.config.num_agents
 
 
 # class PogemaCoopFinish(PogemaBase):
@@ -78,8 +101,6 @@ class PogemaBase(gym.Env):
 class Pogema(PogemaBase):
     def __init__(self, config=GridConfig(num_agents=2)):
         super().__init__(config)
-        self.num_agents = self.config.num_agents
-        self.is_multiagent = True
         self.active = None
 
     def _obs(self):
@@ -113,7 +134,16 @@ class Pogema(PogemaBase):
         obs = self._obs()
         return obs, rewards, dones, infos
 
-    def reset(self):
+    def reset(self, **kwargs):
         self.grid: Grid = Grid(grid_config=self.config)
         self.active = {agent_idx: True for agent_idx in range(self.config.num_agents)}
         return self._obs()
+
+
+def _make_pogema(grid_config):
+    env = Pogema(config=grid_config)
+    env = GlobalStateInfo(env)
+    env = MultiTimeLimit(env, grid_config.max_episode_steps)
+    env = MetricsWrapper(env)
+
+    return env

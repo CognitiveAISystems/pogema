@@ -1,6 +1,5 @@
 import sys
 from typing import Optional, Union
-import numpy as np
 from pydantic import BaseModel, validator
 from typing_extensions import Literal
 
@@ -24,11 +23,12 @@ class GridConfig(BaseModel, ):
 
     map_name: str = None
 
+    integration: Literal['SampleFactory', 'PyMARL', 'rllib', 'gym', 'PettingZoo'] = None
+    max_episode_steps: int = 64
+
     @validator('seed')
     def seed_initialization(cls, v):
         assert v is None or (0 <= v < sys.maxsize), "seed must be in [0, " + str(sys.maxsize) + ']'
-        if v is None:
-            return int(np.random.randint(sys.maxsize, dtype=np.int64))
         return v
 
     @validator('size')
