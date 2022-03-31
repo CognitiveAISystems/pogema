@@ -28,22 +28,137 @@ Just install from PyPI:
 
 ```python
 import gym
-from pogema.grid_config import GridConfig
-from pogema.wrappers.multi_time_limit import MultiTimeLimit
-from pogema.animation import AnimationMonitor
+import pogema
 
-env = gym.make('Pogema-v0', config=GridConfig(size=16, num_agents=16))
-env = MultiTimeLimit(env, max_episode_steps=64)
-env = AnimationMonitor(env)
+env = gym.make("Pogema-8x8-hard-v0")
 
 obs = env.reset()
 
 done = [False, ...]
+
 while not all(done):
-    obs, reward, done, info = env.step([env.action_space.sample() for _ in range(env.config.num_agents)])
+    # Use random policy to make actions
+    obs, reward, done, info = env.step([env.action_space.sample() for _ in range(env.get_grid_config().num_agents)])
 ```
 
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/19dSEGTQeM3oVJtVjpC162t1XApmv6APc?usp=sharing) 
+
+## Environments
+
+| Environment | agents density  | num agents  |  horizon    |
+| -------------------------- | ----- | ----- | ---- |
+| Pogema-8x8-easy-v0         | 2.2%  |   1   |  64  |
+| Pogema-8x8-normal-v0       | 4.5%  |   2   |  64  |
+| Pogema-8x8-hard-v0         | 8.9%  |   4   |  64  |
+| Pogema-8x8-extra-hard-v0   | 17.8% |   8   |  64  |
+| Pogema-16x16-easy-v0       | 2.2%  |   4   |  128 |
+| Pogema-16x16-normal-v0     | 4.5%  |   8   |  128 |
+| Pogema-16x16-hard-v0       | 8.9%  |   16  |  128 |
+| Pogema-16x16-extra-hard-v0 | 17.8% |   32  |  128 |
+| Pogema-32x32-easy-v0       | 2.2%  |   16  |  256 |
+| Pogema-32x32-normal-v0     | 4.5%  |   32  |  256 |
+| Pogema-32x32-hard-v0       | 8.9%  |   64  |  256 |
+| Pogema-32x32-extra-hard-v0 | 17.8% |   128 |  256 |
+| Pogema-64x64-easy-v0       | 2.2%  |   64  |  512 |
+| Pogema-64x64-normal-v0     | 4.5%  |   128 |  512 |
+| Pogema-64x64-hard-v0       | 8.9%  |   256 |  512 |
+| Pogema-64x64-extra-hard-v0 | 17.8% |   512 |  512 |   
+
+## Interfaces
+Pogema provides integrations with a range of MARL frameworks: PettingZoo, PyMARL and SampleFactory. 
+
+### PettingZoo
+
+```python
+import gym
+import pogema
+
+# Create Pogema environment with PettingZoo interface
+env = gym.make("Pogema-8x8-hard-v0", integration="PettingZoo")
+```
+
+### PyMARL
+
+```python
+import gym
+import pogema
+
+env = gym.make("Pogema-8x8-hard-v0", integration="PyMARL")
+```
+
+### SampleFactory
+
+```python
+import gym
+import pogema
+
+env = gym.make("Pogema-8x8-hard-v0", integration="SampleFactory")
+```
+
+### Classic Gym
+
+
+```python
+import gym
+import pogema
+
+# This interface is suitable only for 
+# single-agent partially observable pathfinding tasks
+env = gym.make("Pogema-8x8-easy-v0", integration="SampleFactory")
+```
+
+
+## Customization
+
+### Random maps
+```python
+import gym
+from pogema import GridConfig
+
+# Define random configuration
+grid_config = GridConfig(num_agents=4,  # number of agents
+                         size=8, # size of the grid
+                         density=0.4,  # obstacle density
+                         seed=1,  # set to None for random 
+                                  # obstacles, agents and targets 
+                                  # positions at each reset
+                         max_episode_steps=128,  # horizon
+                         obs_radius=3,  # defines field of view
+                         )
+
+env = gym.make('Pogema-v0', config=grid_config)
+env.reset()
+env.render()
+
+```
+
+### Custom maps
+```python
+import gym
+from pogema import GridConfig
+
+grid = """
+.....#.....
+.....#.....
+...........
+.....#.....
+.....#.....
+#.####.....
+.....###.##
+.....#.....
+.....#.....
+...........
+.....#.....
+"""
+
+# Define new configuration with 8 randomly placed agents
+grid_config = GridConfig(map=grid, num_agents=8)
+
+# Create custom Pogema environment
+env = gym.make('Pogema-v0', config=grid_config)
+```
+
+
 
 
 ## Citation
