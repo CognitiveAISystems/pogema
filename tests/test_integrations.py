@@ -22,6 +22,17 @@ def test_create_all_integrations():
         make_pogema(GridConfig(integration='rllib'))
 
 
+def test_gym_creation():
+    import gym
+    for integration in ['SampleFactory', 'PyMARL', 'gym', "PettingZoo"]:
+        env = gym.make("Pogema-8x8-easy-v0", integration=integration)
+        env.reset()
+
+    for integration in ['SampleFactory', 'PyMARL', "PettingZoo"]:
+        env = gym.make("Pogema-16x16-hard-v0", integration=integration)
+        env.reset()
+
+
 def test_sample_factory_integration():
     env = make_pogema(GridConfig(seed=7, num_agents=4, size=10, integration='SampleFactory'))
     env.reset()

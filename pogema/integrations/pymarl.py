@@ -17,6 +17,12 @@ class PyMarlPogema:
         self.episode_limit = gc.max_episode_steps
         self.n_agents = self.env.get_num_agents()
 
+        self.spec = None
+
+    @property
+    def unwrapped(self):
+        return self
+
     def step(self, actions):
         self._observations, rewards, dones, infos = self.env.step(actions)
         info = {}
@@ -65,6 +71,9 @@ class PyMarlPogema:
 
     def save_replay(self):
         return
+
+    def render(self, *args, **kwargs):
+        return self.env.render(*args, **kwargs)
 
     def get_env_info(self):
         env_info = {"state_shape": self.get_state_size(),
