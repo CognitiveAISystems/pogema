@@ -1,7 +1,7 @@
 from gym import register
 from pogema.grid_config import GridConfig
 
-__version__ = '1.0b1'
+__version__ = '1.0'
 
 __all__ = [
     'GridConfig',
