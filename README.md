@@ -22,7 +22,7 @@ POGEMA can generate random maps and start/goals locations for the agents. It als
 
 Just install from PyPI:
 
-```pip install pogema==1.0b1```
+```pip install pogema```
 
 ## Using Example
 
