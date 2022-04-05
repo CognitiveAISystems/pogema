@@ -24,11 +24,11 @@ def test_create_all_integrations():
 
 def test_gym_creation():
     import gym
-    for integration in ['SampleFactory', 'PyMARL', 'gym', "PettingZoo"]:
+    for integration in ['SampleFactory', 'PyMARL', 'gym', "PettingZoo", None]:
         env = gym.make("Pogema-8x8-easy-v0", integration=integration)
         env.reset()
 
-    for integration in ['SampleFactory', 'PyMARL', "PettingZoo"]:
+    for integration in ['SampleFactory', 'PyMARL', "PettingZoo", None]:
         env = gym.make("Pogema-16x16-hard-v0", integration=integration)
         env.reset()
 

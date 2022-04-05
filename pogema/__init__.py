@@ -9,7 +9,7 @@ __all__ = [
 
 register(
     id="Pogema-v0",
-    entry_point="pogema.envs:Pogema",
+    entry_point="pogema.make_pogema:make_pogema",
 )
 
 
