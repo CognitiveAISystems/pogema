@@ -126,7 +126,7 @@ grid_config = GridConfig(num_agents=4,  # number of agents
                          obs_radius=3,  # defines field of view
                          )
 
-env = gym.make('Pogema-v0', config=grid_config)
+env = gym.make('Pogema-v0', grid_config=grid_config)
 env.reset()
 env.render()
 
@@ -155,7 +155,7 @@ grid = """
 grid_config = GridConfig(map=grid, num_agents=8)
 
 # Create custom Pogema environment
-env = gym.make('Pogema-v0', config=grid_config)
+env = gym.make('Pogema-v0', grid_config=grid_config)
 ```
 
 
