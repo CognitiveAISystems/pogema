@@ -42,7 +42,7 @@ class PogemaBase(gym.Env):
 
     def _get_agents_obs(self, agent_id=0):
         return np.concatenate([
-            self.grid.get_obstacles(agent_id)[None],
+            self.grid.get_obstacles_for_agent(agent_id)[None],
             self.grid.get_positions(agent_id)[None],
             self.grid.get_square_target(agent_id)[None]
         ])

@@ -2,6 +2,7 @@ import string
 import sys
 import warnings
 from contextlib import closing
+from copy import deepcopy
 
 import numpy as np
 from gym import utils
@@ -67,7 +68,69 @@ class Grid:
         self.positions = filled_positions
         self.finishes_xy = finishes_xy
         self.positions_xy = starts_xy
-        self.hidden_agents = set()
+        self.inactive = set()
+        self.active = set([agent_id for agent_id in range(self.config.num_agents)])
+
+    def get_obstacles(self, ignore_borders=False):
+        gc = self.config
+        if ignore_borders:
+            return self.obstacles[gc.obs_radius:-gc.obs_radius, gc.obs_radius:-gc.obs_radius].copy()
+        return self.obstacles.copy()
+
+    @staticmethod
+    def _cut_borders_xy(positions, obs_radius):
+        return [[x - obs_radius, y - obs_radius] for x, y in positions]
+
+    @staticmethod
+    def _filter_inactive(pos, active_flags):
+        return [pos for idx, pos in enumerate(pos) if active_flags[idx]]
+
+    def get_grid_config(self):
+        return deepcopy(self.config)
+
+    # def _get_grid_config(self) -> GridConfig:
+    #     return self.env.config
+
+    def _prepare_positions(self, positions, only_active, ignore_borders):
+        gc = self.config
+
+        if only_active:
+            positions = self._filter_inactive(positions, list(self.active))
+
+        if ignore_borders:
+            positions = self._cut_borders_xy(positions, gc.obs_radius)
+
+        return positions
+
+    def get_agents_xy(self, only_active=False, ignore_borders=False):
+        return self._prepare_positions(deepcopy(self.positions_xy), only_active, ignore_borders)
+
+    def get_targets_xy(self, only_active=False, ignore_borders=False):
+        return self._prepare_positions(deepcopy(self.finishes_xy), only_active, ignore_borders)
+
+    def _normalize_coordinates(self, coordinates):
+        gc = self.config
+
+        x, y = coordinates
+
+        x -= gc.obs_radius
+        y -= gc.obs_radius
+
+        x /= gc.size - 1
+        y /= gc.size - 1
+
+        return x, y
+
+    def get_state(self, ignore_borders=False, as_dict=False):
+        agents_xy = list(map(self._normalize_coordinates, self.get_agents_xy(ignore_borders)))
+        targets_xy = list(map(self._normalize_coordinates, self.get_targets_xy(ignore_borders)))
+
+        obstacles = self.get_obstacles(ignore_borders)
+
+        if as_dict:
+            return {"obstacles": obstacles, "agents_xy": agents_xy, "targets_xy": targets_xy}
+
+        return np.concatenate(list(map(lambda x: np.array(x).flatten(), [agents_xy, targets_xy, obstacles])))
 
     def get_observation_shape(self):
         full_radius = self.config.obs_radius * 2 + 1
@@ -76,7 +139,7 @@ class Grid:
     def get_num_actions(self):
         return len(self.config.MOVES)
 
-    def get_obstacles(self, agent_id):
+    def get_obstacles_for_agent(self, agent_id):
         x, y = self.positions_xy[agent_id]
         r = self.config.obs_radius
         return self.obstacles[x - r:x + r + 1, y - r:y + r + 1]
@@ -154,11 +217,15 @@ class Grid:
     def on_goal(self, agent_id):
         return self.positions_xy[agent_id] == self.finishes_xy[agent_id]
 
+    def is_active(self, agent_id):
+        return agent_id in self.inactive
+
     def hide_agent(self, agent_id):
-        if agent_id in self.hidden_agents:
+        if agent_id in self.inactive:
             return False
 
-        self.hidden_agents.add(agent_id)
+        self.inactive.add(agent_id)
+        self.active.remove(agent_id)
 
         x, y = self.positions_xy[agent_id]
         self.positions[x, y] = self.config.FREE
