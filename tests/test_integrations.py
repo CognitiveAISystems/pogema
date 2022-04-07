@@ -7,28 +7,18 @@ from pogema import GridConfig
 from pogema.integrations.make_pogema import make_pogema
 
 
-def test_create_all_integrations():
-    for integration in ['SampleFactory', 'PyMARL']:
-        env = make_pogema(GridConfig(seed=7, num_agents=4, size=10, integration=integration))
-        env.reset()
-
-    env = make_pogema(GridConfig(num_agents=1, size=5, integration='gym'))
-    env.reset()
-
-    with pytest.raises(AssertionError):
-        make_pogema(GridConfig(num_agents=2, integration='gym'))
-
-    with pytest.raises(NotImplementedError):
-        make_pogema(GridConfig(integration='rllib'))
-
-
 def test_gym_creation():
     import gym
-    for integration in ['SampleFactory', 'PyMARL', 'gym', "PettingZoo"]:
+
+    for integration in ['SampleFactory', 'PyMARL', 'gym', "PettingZoo", None]:
+        env = gym.make("Pogema-v0", integration=integration)
+        env.reset()
+
+    for integration in ['SampleFactory', 'PyMARL', 'gym', "PettingZoo", None]:
         env = gym.make("Pogema-8x8-easy-v0", integration=integration)
         env.reset()
 
-    for integration in ['SampleFactory', 'PyMARL', "PettingZoo"]:
+    for integration in ['SampleFactory', 'PyMARL', "PettingZoo", None]:
         env = gym.make("Pogema-16x16-hard-v0", integration=integration)
         env.reset()
 
