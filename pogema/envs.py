@@ -4,7 +4,6 @@ from gym.error import ResetNeeded
 
 from pogema.grid import Grid
 from pogema.grid_config import GridConfig
-from pogema.wrappers.global_state_info import GlobalStateInfo
 from pogema.wrappers.metrics import MetricsWrapper
 from pogema.wrappers.multi_time_limit import MultiTimeLimit
 
@@ -139,10 +138,21 @@ class Pogema(PogemaBase):
         self.active = {agent_idx: True for agent_idx in range(self.config.num_agents)}
         return self._obs()
 
+    def get_obstacles(self, ignore_borders=False):
+        return self.grid.get_obstacles(ignore_borders=ignore_borders)
+
+    def get_agents_xy(self, only_active=False, ignore_borders=False):
+        return self.grid.get_agents_xy(only_active=only_active, ignore_borders=ignore_borders)
+
+    def get_targets_xy(self, only_active=False, ignore_borders=False):
+        return self.grid.get_targets_xy(only_active=only_active, ignore_borders=ignore_borders)
+
+    def get_state(self, ignore_borders=False, as_dict=False):
+        return self.grid.get_state(ignore_borders=ignore_borders, as_dict=as_dict)
+
 
 def _make_pogema(grid_config):
     env = Pogema(config=grid_config)
-    env = GlobalStateInfo(env)
     env = MultiTimeLimit(env, grid_config.max_episode_steps)
     env = MetricsWrapper(env)
 
