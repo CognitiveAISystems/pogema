@@ -70,18 +70,6 @@ class GridConfig(BaseModel, ):
         values['density'] = sum([sum(line) for line in v]) / area
         return v
 
-    def get_short_description(self):
-        description = ''
-        if self.map_name:
-            description += f'name:{self.map_name};'
-        if self.map:
-            description += 'type:custom;'
-        else:
-            description += 'type:random;'
-
-        description += f'agents:{self.num_agents};size:{self.size};density:{self.density};radius:{self.obs_radius};'
-        return description
-
     @staticmethod
     def str_map_to_list(str_map, free, obstacle):
         obstacles = []
