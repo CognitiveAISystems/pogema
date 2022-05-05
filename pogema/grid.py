@@ -68,6 +68,7 @@ class Grid:
         self.positions = filled_positions
         self.finishes_xy = finishes_xy
         self.positions_xy = starts_xy
+        self._initial_xy = deepcopy(starts_xy)
         self.inactive = set()
         self.active = set([agent_id for agent_id in range(self.config.num_agents)])
 
@@ -104,6 +105,21 @@ class Grid:
 
     def get_agents_xy(self, only_active=False, ignore_borders=False):
         return self._prepare_positions(deepcopy(self.positions_xy), only_active, ignore_borders)
+
+    @staticmethod
+    def to_relative(coordinates, offset):
+        result = deepcopy(coordinates)
+        for idx, _ in enumerate(result):
+            x, y = result[idx]
+            dx, dy = offset[idx]
+            result[idx] = x - dx, y - dy
+        return result
+
+    def get_agents_xy_relative(self):
+        return self.to_relative(self.positions_xy, self._initial_xy)
+
+    def get_targets_xy_relative(self):
+        return self.to_relative(self.finishes_xy, self._initial_xy)
 
     def get_targets_xy(self, only_active=False, ignore_borders=False):
         return self._prepare_positions(deepcopy(self.finishes_xy), only_active, ignore_borders)

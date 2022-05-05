@@ -138,6 +138,12 @@ class Pogema(PogemaBase):
         self.active = {agent_idx: True for agent_idx in range(self.config.num_agents)}
         return self._obs()
 
+    def get_agents_xy_relative(self):
+        return self.grid.get_agents_xy_relative()
+
+    def get_targets_xy_relative(self):
+        return self.grid.get_targets_xy_relative()
+
     def get_obstacles(self, ignore_borders=False):
         return self.grid.get_obstacles(ignore_borders=ignore_borders)
 
