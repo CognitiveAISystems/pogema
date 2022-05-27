@@ -38,7 +38,7 @@ done = [False, ...]
 
 while not all(done):
     # Use random policy to make actions
-    obs, reward, done, info = env.step([env.action_space.sample() for _ in range(env.get_grid_config().num_agents)])
+    obs, reward, done, info = env.step([env.action_space.sample() for _ in range(len(obs))])
 ```
 
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/19dSEGTQeM3oVJtVjpC162t1XApmv6APc?usp=sharing) 
