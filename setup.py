@@ -45,7 +45,7 @@ setup(
         "drawSvg>=1.8.2",
     ],
     extras_require={
-        "numba": ["numba>=0.53.1", ]
+
     },
     package_dir={'': './'},
     packages=find_packages(where='./', include='pogema*'),
