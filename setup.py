@@ -42,7 +42,6 @@ setup(
         "gym>=0.18.3",
         "numpy>=1.19.2",
         "pydantic>=1.8.2",
-        "drawSvg>=1.8.2",
     ],
     extras_require={
 
