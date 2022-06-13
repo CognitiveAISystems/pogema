@@ -8,7 +8,7 @@ import numpy as np
 from gym import utils
 from io import StringIO
 
-from pogema.generator import generate_obstacles, generate_positions_and_targets_fast
+from pogema.generator import generate_obstacles, generate_positions_and_targets_fast, check_connection
 from .grid_config import GridConfig
 
 
@@ -26,6 +26,18 @@ class Grid:
 
         if grid_config.targets_xy and grid_config.agents_xy:
             starts_xy, finishes_xy = grid_config.agents_xy, grid_config.targets_xy
+            grid_config.num_agents = len(starts_xy)
+            if self.config.map is None:
+                ok_gen = False
+                while not ok_gen:
+                    obstacles = generate_obstacles(self.config)
+                    ok_gen = check_connection(obstacles, grid_config)
+                    if not ok_gen and grid_config.seed is not None:
+                        raise OverflowError("Can't create task. Please change seed or provide custom map for these agents_xy and targets_xy.")
+            else:
+                if not check_connection(obstacles, grid_config):
+                    raise OverflowError("Can't create task. Please change agents_xy or targets_xy for this map.\
+                                         They cannot be placed on obstacles and targets shoult be reachable")
         else:
             starts_xy, finishes_xy = generate_positions_and_targets_fast(obstacles, self.config)
 

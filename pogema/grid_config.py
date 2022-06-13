@@ -13,8 +13,8 @@ class GridConfig(BaseModel, ):
     density: float = 0.3
     num_agents: int = 1
     obs_radius: int = 5
-    agents_xy: list = None
-    targets_xy: list = None
+    agents_xy: Optional[list] = None
+    targets_xy: Optional[list] = None
 
     map: Union[list, str] = None
 
@@ -56,11 +56,14 @@ class GridConfig(BaseModel, ):
         if v is None:
             return None
         if isinstance(v, str):
-            v, agents_xy, targets_xy = cls.str_map_to_list(v, values['FREE'], values['OBSTACLE'])
-            if agents_xy and targets_xy:
-                values['agents_xy'] = agents_xy
-                values['targets_xy'] = targets_xy
-                values['num_agents'] = len(agents_xy)
+            if values['agents_xy'] is not None and values['targets_xy'] is not None:
+                v, _, _ = cls.str_map_to_list(v, values['FREE'], values['OBSTACLE'])
+            else:
+                v, agents_xy, targets_xy = cls.str_map_to_list(v, values['FREE'], values['OBSTACLE'])
+                if agents_xy and targets_xy:
+                    values['agents_xy'] = agents_xy
+                    values['targets_xy'] = targets_xy
+                    values['num_agents'] = len(agents_xy)
         size = len(v)
         area = 0
         for line in v:
@@ -68,6 +71,21 @@ class GridConfig(BaseModel, ):
             area += len(line)
         values['size'] = size
         values['density'] = sum([sum(line) for line in v]) / area
+        return v
+
+    @validator('agents_xy')
+    def agents_xy_validation(cls, v, values):
+        for position in v:
+            assert position[0] >= 0 and position[0] < values['size'] and \
+                position[1] >= 0 and position[1] < values['size']
+        values['num_agents'] = len(v)
+        return v
+
+    @validator('targets_xy')
+    def targets_xy_validation(cls, v, values):
+        for position in v:
+            assert position[0] >= 0 and position[0] < values['size'] and \
+                position[1] >= 0 and position[1] < values['size']
         return v
 
     @staticmethod
