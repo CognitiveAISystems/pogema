@@ -80,6 +80,7 @@ def generate_positions_and_targets(obstacles, grid_config: GridConfig):
         positions_xy.append((x, y))
     return positions_xy, finishes_xy
 
+
 def bfs(grid, moves, size, start_id, free_cell):
     q = []
     current_id = start_id

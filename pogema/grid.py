@@ -28,7 +28,7 @@ class Grid:
         if grid_config.targets_xy and grid_config.agents_xy:
             starts_xy, finishes_xy = grid_config.agents_xy, grid_config.targets_xy
             if len(starts_xy) != len(finishes_xy):
-                raise OverflowError("Can't create task. Please provide agents_xy and targets_xy of the same size.")
+                raise IndexError("Can't create task. Please provide agents_xy and targets_xy of the same size.")
             grid_config.num_agents = len(starts_xy)
             for start_xy, finish_xy in zip(starts_xy, finishes_xy):
                 s_x, s_y = start_xy

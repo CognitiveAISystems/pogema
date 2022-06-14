@@ -79,18 +79,20 @@ class GridConfig(BaseModel, ):
 
     @validator('agents_xy')
     def agents_xy_validation(cls, v, values):
-        for position in v:
-            assert position[0] >= 0 and position[0] < values['size'] and \
-                position[1] >= 0 and position[1] < values['size']
+        cls.check_positions(v, values)
         values['num_agents'] = len(v)
         return v
 
     @validator('targets_xy')
     def targets_xy_validation(cls, v, values):
+        cls.check_positions(v, values)
+        return v
+
+    @staticmethod
+    def check_positions(v, values):
         for position in v:
             assert position[0] >= 0 and position[0] < values['size'] and \
                 position[1] >= 0 and position[1] < values['size']
-        return v
 
     @staticmethod
     def str_map_to_list(str_map, free, obstacle):
