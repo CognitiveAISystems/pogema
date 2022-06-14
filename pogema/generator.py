@@ -5,15 +5,6 @@ import numpy as np
 
 from pogema import GridConfig
 
-try:
-    from numba import njit
-except ImportError:
-    def njit(func):
-        def wrapper(*args, **kwargs):
-            return func(*args, **kwargs)
-
-        return wrapper
-
 
 def generate_obstacles(grid_config: GridConfig, rnd=None):
     if rnd is None:
@@ -89,7 +80,6 @@ def generate_positions_and_targets(obstacles, grid_config: GridConfig):
         positions_xy.append((x, y))
     return positions_xy, finishes_xy
 
-@njit
 def bfs(grid, moves, size, start_id, free_cell):
     q = []
     current_id = start_id

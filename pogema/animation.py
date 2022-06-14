@@ -3,7 +3,6 @@ import typing
 from copy import deepcopy
 from itertools import cycle
 from gym import logger
-import drawSvg
 import gym
 from pogema.wrappers.multi_time_limit import MultiTimeLimit
 
@@ -52,6 +51,77 @@ class GridHolder(BaseModel):
     height: int = None
     width: int = None
     colors: dict = None
+
+
+class SvgObject:
+    tag = None
+
+    def __init__(self, **kwargs):
+        self.attributes = kwargs
+        self.animations = []
+
+    def add_animation(self, animation):
+        self.animations.append(animation)
+
+    @staticmethod
+    def render_attributes(attributes):
+        result = " ".join([f'{x.replace("_", "-")}="{y}"' for x, y in sorted(attributes.items())])
+        return result
+
+    def render(self):
+        animations = '\n'.join([a.render() for a in self.animations]) if self.animations else None
+        if animations:
+            return f"<{self.tag} {self.render_attributes(self.attributes)}> {animations} </{self.tag}>"
+        return f"<{self.tag} {self.render_attributes(self.attributes)} />"
+
+
+class Rectangle(SvgObject):
+    tag = 'rect'
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.attributes['y'] = -self.attributes['y'] - self.attributes['height']
+
+
+class Circle(SvgObject):
+    tag = 'circle'
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.attributes['cy'] = -self.attributes['cy']
+
+
+class Animation(SvgObject):
+    tag = 'animate'
+
+    def render(self):
+        # return ""
+        return f"<{self.tag} {self.render_attributes(self.attributes)}/>"
+
+
+class Drawing:
+    pass
+
+    def __init__(self, height, width, displayInline=False, origin=(0, 0)):
+        self.height = height
+        self.width = width
+        self.displayInline = displayInline
+        self.origin = origin
+        self.elements = []
+
+    def add_element(self, element):
+        self.elements.append(element)
+
+    def render(self):
+        view_box = (0, -self.height, self.width, self.height)
+        results = [f'''<?xml version="1.0" encoding="UTF-8"?>
+        <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"
+             width="{self.width // 10}" height="{self.height // 10}" viewBox="{" ".join(map(str, view_box))}">''',
+                   '\n<defs>\n', '</defs>\n']
+        for element in self.elements:
+            results.append(element.render())
+        results.append('</svg>')
+        return "\n".join(results)
 
 
 class AnimationMonitor(gym.Wrapper):
@@ -122,10 +192,8 @@ class AnimationMonitor(gym.Wrapper):
                         agents_done_history=self.dones_history, egocentric_idx=egocentric_idx, obstacles=grid.obstacles,
                         colors=agents_colors, targets_xy=grid.finishes_xy, episode_length=episode_length)
 
-        render_height, render_width = gh.height * cfg.scale_size, gh.width * cfg.scale_size
-        drawing = drawSvg.Drawing(render_height, render_width, displayInline=False,
-                                  origin=(0, 0))
-        drawing.setRenderSize(render_height // 10, render_width // 10)
+        render_width, render_height = gh.height * cfg.scale_size, gh.width * cfg.scale_size
+        drawing = Drawing(width=render_width, height=render_height, displayInline=False, origin=(0, 0))
         obstacles = self.create_obstacles(gh)
         agents = self.create_agents(gh)
         targets = self.create_targets(gh)
@@ -137,16 +205,17 @@ class AnimationMonitor(gym.Wrapper):
             self.animate_obstacles(obstacles=obstacles, egocentric_idx=egocentric_idx, grid_holder=gh)
             field_of_view = self.create_field_of_view(grid_holder=gh)
             self.animate_field_of_view(field_of_view, egocentric_idx, gh)
-            drawing.append(field_of_view)
+            drawing.add_element(field_of_view)
 
         for obj in [*obstacles, *agents, *targets]:
-            drawing.append(obj)
+            drawing.add_element(obj)
 
         return drawing
 
     def save_animation(self, name='render.svg', egocentric_idx=None):
         animation = self.create_animation(egocentric_idx)
-        animation.saveSvg(fname=name)
+        with open(name, "w") as f:
+            f.write(animation.render())
 
     @staticmethod
     def fix_point(x, y, length):
@@ -164,16 +233,16 @@ class AnimationMonitor(gym.Wrapper):
         cy = cfg.draw_start + (gh.width - x - 1) * cfg.scale_size
 
         dr = (self.grid_cfg.obs_radius + 1) * cfg.scale_size - cfg.stroke_width * 2
-        result = drawSvg.Rectangle(cx - dr + cfg.r,
-                                   cy - dr + cfg.r,
-                                   2 * dr - 2 * cfg.r,
-                                   2 * dr - 2 * cfg.r,
-                                   stroke=cfg.ego_color,
-                                   stroke_width=cfg.stroke_width,
-                                   fill='none',
-                                   rx=cfg.rx,
-                                   stroke_dasharray=cfg.stroke_dasharray,
-                                   )
+        result = Rectangle(x=cx - dr + cfg.r,
+                           y=cy - dr + cfg.r,
+                           width=2 * dr - 2 * cfg.r,
+                           height=2 * dr - 2 * cfg.r,
+                           stroke=cfg.ego_color,
+                           stroke_width=cfg.stroke_width,
+                           fill='none',
+                           rx=cfg.rx,
+                           stroke_dasharray=cfg.stroke_dasharray,
+                           )
 
         return result
 
@@ -194,9 +263,9 @@ class AnimationMonitor(gym.Wrapper):
         for dones in gh.agents_done_history[:gh.episode_length]:
             visibility.append('hidden' if dones[agent_idx] else "visible")
 
-        view.appendAnim(self.compressed_anim('x', x_path, cfg.time_scale))
-        view.appendAnim(self.compressed_anim('y', y_path, cfg.time_scale))
-        view.appendAnim(self.compressed_anim('visibility', visibility, cfg.time_scale))
+        view.add_animation(self.compressed_anim('x', x_path, cfg.time_scale))
+        view.add_animation(self.compressed_anim('y', y_path, cfg.time_scale))
+        view.add_animation(self.compressed_anim('visibility', visibility, cfg.time_scale))
 
     def animate_agents(self, agents, egocentric_idx, grid_holder):
         gh: GridHolder = grid_holder
@@ -221,11 +290,11 @@ class AnimationMonitor(gym.Wrapper):
             for dones in gh.agents_done_history[:gh.episode_length]:
                 visibility.append('hidden' if dones[agent_idx] else "visible")
 
-            agent.appendAnim(self.compressed_anim('cy', y_path, cfg.time_scale))
-            agent.appendAnim(self.compressed_anim('cx', x_path, cfg.time_scale))
-            agent.appendAnim(self.compressed_anim('visibility', visibility, cfg.time_scale))
+            agent.add_animation(self.compressed_anim('cy', y_path, cfg.time_scale))
+            agent.add_animation(self.compressed_anim('cx', x_path, cfg.time_scale))
+            agent.add_animation(self.compressed_anim('visibility', visibility, cfg.time_scale))
             if opacity:
-                agent.appendAnim(self.compressed_anim('opacity', opacity, cfg.time_scale))
+                agent.add_animation(self.compressed_anim('opacity', opacity, cfg.time_scale))
 
     @classmethod
     def compressed_anim(cls, attr_name, tokens, time_scale, rep_cnt='indefinite'):
@@ -238,9 +307,11 @@ class AnimationMonitor(gym.Wrapper):
 
         times = times
         tokens = tokens
-        return drawSvg.Animate(attr_name, f'{time_scale * (-1 + cumulative[-1])}s', ";".join(tokens),
-                               repeatCount=rep_cnt,
-                               keyTimes=";".join(times))
+        return Animation(attributeName=attr_name,
+                         dur=f'{time_scale * (-1 + cumulative[-1])}s',
+                         values=";".join(tokens),
+                         repeatCount=rep_cnt,
+                         keyTimes=";".join(times))
 
     @staticmethod
     def wisely_add(token, cnt, tokens, times):
@@ -279,7 +350,7 @@ class AnimationMonitor(gym.Wrapper):
             visibility = []
             for dones in gh.agents_done_history[:gh.episode_length]:
                 visibility.append('hidden' if dones[target_idx] else "visible")
-            target.appendAnim(self.compressed_anim("visibility", visibility, cfg.time_scale))
+            target.add_animation(self.compressed_anim("visibility", visibility, cfg.time_scale))
 
     def create_obstacles(self, grid_holder):
         gh = grid_holder
@@ -304,7 +375,7 @@ class AnimationMonitor(gym.Wrapper):
                         if not self.check_in_radius(x, y, ego_x, ego_y, self.grid_cfg.obs_radius):
                             obs_settings.update(opacity=cfg.shaded_opacity)
 
-                    result.append(drawSvg.Rectangle(**obs_settings))
+                    result.append(Rectangle(**obs_settings))
 
         return result
 
@@ -330,7 +401,7 @@ class AnimationMonitor(gym.Wrapper):
                         opacity.append(str(cfg.shaded_opacity))
 
                 obstacle = obstacles[obstacle_idx]
-                obstacle.appendAnim(self.compressed_anim('opacity', opacity, cfg.time_scale))
+                obstacle.add_animation(self.compressed_anim('opacity', opacity, cfg.time_scale))
 
                 obstacle_idx += 1
 
@@ -356,7 +427,7 @@ class AnimationMonitor(gym.Wrapper):
                     circle_settings.update(fill=self.cfg.ego_color)
                 else:
                     circle_settings.update(fill=self.cfg.ego_other_color)
-            agent = drawSvg.Circle(**circle_settings)
+            agent = Circle(**circle_settings)
             agents.append(agent)
 
         return agents
@@ -379,14 +450,14 @@ class AnimationMonitor(gym.Wrapper):
                     continue
 
                 circle_settings.update(stroke=cfg.ego_color)
-            target = drawSvg.Circle(**circle_settings)
+            target = Circle(**circle_settings)
             targets.append(target)
         return targets
 
 
 def main():
     grid_config = GridConfig(size=64, num_agents=256, obs_radius=2, seed=7)
-    env = gym.make('Pogema-v0', config=grid_config)
+    env = gym.make('Pogema-v0', grid_config=grid_config)
     env = MultiTimeLimit(env, max_episode_steps=12)
     env = AnimationMonitor(env, egocentric_idx=None)
 
