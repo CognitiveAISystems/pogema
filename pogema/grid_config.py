@@ -56,14 +56,14 @@ class GridConfig(BaseModel, ):
         if v is None:
             return None
         if isinstance(v, str):
-            if values['agents_xy'] is not None and values['targets_xy'] is not None:
-                v, _, _ = cls.str_map_to_list(v, values['FREE'], values['OBSTACLE'])
-            else:
-                v, agents_xy, targets_xy = cls.str_map_to_list(v, values['FREE'], values['OBSTACLE'])
-                if agents_xy and targets_xy:
-                    values['agents_xy'] = agents_xy
-                    values['targets_xy'] = targets_xy
-                    values['num_agents'] = len(agents_xy)
+            v, agents_xy, targets_xy = cls.str_map_to_list(v, values['FREE'], values['OBSTACLE'])
+            if agents_xy and targets_xy and values['agents_xy'] is not None and values['targets_xy'] is not None:
+                assert sorted(agents_xy) == sorted(values['agents_xy']) and sorted(targets_xy) == sorted(values['targets_xy']), \
+                    "Please provide set agents_xy and targets_xy ONLY with one method(either with parameter or with the map configuration)"
+            elif agents_xy and targets_xy:
+                values['agents_xy'] = agents_xy
+                values['targets_xy'] = targets_xy
+                values['num_agents'] = len(agents_xy)
         size = len(v)
         area = 0
         for line in v:

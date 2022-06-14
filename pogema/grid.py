@@ -3,12 +3,13 @@ import sys
 import warnings
 from contextlib import closing
 from copy import deepcopy
+import warnings
 
 import numpy as np
 from gym import utils
 from io import StringIO
 
-from pogema.generator import generate_obstacles, generate_positions_and_targets_fast, check_connection
+from pogema.generator import generate_obstacles, generate_positions_and_targets_fast
 from .grid_config import GridConfig
 
 
@@ -26,18 +27,18 @@ class Grid:
 
         if grid_config.targets_xy and grid_config.agents_xy:
             starts_xy, finishes_xy = grid_config.agents_xy, grid_config.targets_xy
+            if len(starts_xy) != len(finishes_xy):
+                raise OverflowError("Can't create task. Please provide agents_xy and targets_xy of the same size.")
             grid_config.num_agents = len(starts_xy)
-            if self.config.map is None:
-                ok_gen = False
-                while not ok_gen:
-                    obstacles = generate_obstacles(self.config)
-                    ok_gen = check_connection(obstacles, grid_config)
-                    if not ok_gen and grid_config.seed is not None:
-                        raise OverflowError("Can't create task. Please change seed or provide custom map for these agents_xy and targets_xy.")
-            else:
-                if not check_connection(obstacles, grid_config):
-                    raise OverflowError("Can't create task. Please change agents_xy or targets_xy for this map.\
-                                         They cannot be placed on obstacles and targets shoult be reachable")
+            for start_xy, finish_xy in zip(starts_xy, finishes_xy):
+                s_x, s_y = start_xy
+                f_x, f_y = finish_xy
+                if self.config.map is not None and obstacles[s_x, s_y] == grid_config.OBSTACLE:
+                    warnings.warn(f"There is an obstacle on a start point ({s_x}, {s_y}), replacing with free cell")
+                obstacles[s_x, s_y] = grid_config.FREE
+                if self.config.map is not None and obstacles[f_x, f_y] == grid_config.OBSTACLE:
+                    warnings.warn(f"There is an obstacle on a finish point ({s_x}, {s_y}), replacing with free cell")
+                obstacles[f_x, f_y] = grid_config.FREE
         else:
             starts_xy, finishes_xy = generate_positions_and_targets_fast(obstacles, self.config)
 

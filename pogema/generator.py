@@ -89,36 +89,6 @@ def generate_positions_and_targets(obstacles, grid_config: GridConfig):
         positions_xy.append((x, y))
     return positions_xy, finishes_xy
 
-def check_connection(obstacles, grid_config):
-    cid = max(grid_config.FREE, grid_config.OBSTACLE) + 1
-    for positions, targets in zip(grid_config.agents_xy, grid_config.targets_xy):
-        cobs = obstacles.copy()
-        ag_x, ag_y = positions
-        t_x, t_y = targets
-        if cobs[ag_x, ag_y] != grid_config.FREE or cobs[t_x, t_y] != grid_config.FREE:
-            return False
-        cobs[ag_x, ag_y] = cid
-        q = []
-        q.append((ag_x, ag_y))
-        flag_found = False
-        while len(q) and not flag_found:
-            cx, cy = q.pop(0)
-
-            for dx, dy in grid_config.MOVES:
-                nx, ny = cx + dx, cy + dy
-                if 0 <= nx < grid_config.size and 0 <= ny < grid_config.size:
-                    if cobs[nx, ny] == grid_config.FREE:
-                        if (t_x, t_y) == (nx, ny):
-                            flag_found = True
-                            break
-                        cobs[nx, ny] = cid
-                        q.append((nx, ny))
-                if flag_found:
-                    break
-        if not flag_found:
-            return False
-    return True
-
 @njit
 def bfs(grid, moves, size, start_id, free_cell):
     q = []
