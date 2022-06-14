@@ -16,11 +16,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ["3.6", "3.7", "3.8"]
-        numba: [""]
-        include:
-          - python-version: 3.7
-          - numba: "test-numba"
+        python-version: ["3.6", "3.7", "3.8", "3.9"]
 
     steps:
     - uses: actions/checkout@v2
@@ -32,7 +28,6 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         python -m pip install flake8 pytest
-        if ${{ matrix.numba == 'test-numba' }}; then pip install numba; fi
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
     - name: Lint with flake8
       run: |

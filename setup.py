@@ -42,10 +42,9 @@ setup(
         "gym>=0.18.3",
         "numpy>=1.19.2",
         "pydantic>=1.8.2",
-        "drawSvg>=1.8.2",
     ],
     extras_require={
-        "numba": ["numba>=0.53.1", ]
+
     },
     package_dir={'': './'},
     packages=find_packages(where='./', include='pogema*'),
