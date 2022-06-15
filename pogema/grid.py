@@ -34,10 +34,10 @@ class Grid:
                 s_x, s_y = start_xy
                 f_x, f_y = finish_xy
                 if self.config.map is not None and obstacles[s_x, s_y] == grid_config.OBSTACLE:
-                    warnings.warn(f"There is an obstacle on a start point ({s_x}, {s_y}), replacing with free cell")
+                    warnings.warn(f"There is an obstacle on a start point ({s_x}, {s_y}), replacing with free cell", Warning, stacklevel=2)
                 obstacles[s_x, s_y] = grid_config.FREE
                 if self.config.map is not None and obstacles[f_x, f_y] == grid_config.OBSTACLE:
-                    warnings.warn(f"There is an obstacle on a finish point ({s_x}, {s_y}), replacing with free cell")
+                    warnings.warn(f"There is an obstacle on a finish point ({s_x}, {s_y}), replacing with free cell", Warning, stacklevel=2)
                 obstacles[f_x, f_y] = grid_config.FREE
         else:
             starts_xy, finishes_xy = generate_positions_and_targets_fast(obstacles, self.config)

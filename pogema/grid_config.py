@@ -62,8 +62,7 @@ class GridConfig(BaseModel, ):
         if isinstance(v, str):
             v, agents_xy, targets_xy = cls.str_map_to_list(v, values['FREE'], values['OBSTACLE'])
             if agents_xy and targets_xy and values['agents_xy'] is not None and values['targets_xy'] is not None:
-                assert sorted(agents_xy) == sorted(values['agents_xy']) and sorted(targets_xy) == sorted(values['targets_xy']), \
-                    "Please provide set agents_xy and targets_xy ONLY with one method(either with parameter or with the map configuration)"
+                raise OverflowError("Can't create task. Please provide agents_xy and targets_xy ONLY with ONE method(either with parameters or with map).")
             elif agents_xy and targets_xy:
                 values['agents_xy'] = agents_xy
                 values['targets_xy'] = targets_xy
