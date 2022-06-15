@@ -90,8 +90,9 @@ class GridConfig(BaseModel, ):
     @staticmethod
     def check_positions(v, values):
         for position in v:
-            assert position[0] >= 0 and position[0] < values['size'] and \
-                position[1] >= 0 and position[1] < values['size']
+            x, y = position
+            assert 0 <= x < values['size'] and 0 <= y < values['size'], "Position is out of bounds!"
+
 
     @staticmethod
     def str_map_to_list(str_map, free, obstacle):
