@@ -17,8 +17,8 @@ class GridConfig(BaseModel, ):
     density: float = 0.3
     num_agents: int = 1
     obs_radius: int = 5
-    agents_xy: list = None
-    targets_xy: list = None
+    agents_xy: Optional[list] = None
+    targets_xy: Optional[list] = None
 
     map: Union[list, str] = None
 
@@ -61,7 +61,9 @@ class GridConfig(BaseModel, ):
             return None
         if isinstance(v, str):
             v, agents_xy, targets_xy = cls.str_map_to_list(v, values['FREE'], values['OBSTACLE'])
-            if agents_xy and targets_xy:
+            if agents_xy and targets_xy and values['agents_xy'] is not None and values['targets_xy'] is not None:
+                raise OverflowError("Can't create task. Please provide agents_xy and targets_xy ONLY with ONE method(either with parameters or with map).")
+            elif agents_xy and targets_xy:
                 values['agents_xy'] = agents_xy
                 values['targets_xy'] = targets_xy
                 values['num_agents'] = len(agents_xy)
@@ -73,6 +75,24 @@ class GridConfig(BaseModel, ):
         values['size'] = size
         values['density'] = sum([sum(line) for line in v]) / area
         return v
+
+    @validator('agents_xy')
+    def agents_xy_validation(cls, v, values):
+        cls.check_positions(v, values)
+        values['num_agents'] = len(v)
+        return v
+
+    @validator('targets_xy')
+    def targets_xy_validation(cls, v, values):
+        cls.check_positions(v, values)
+        return v
+
+    @staticmethod
+    def check_positions(v, values):
+        for position in v:
+            x, y = position
+            assert 0 <= x < values['size'] and 0 <= y < values['size'], "Position is out of bounds!"
+
 
     @staticmethod
     def str_map_to_list(str_map, free, obstacle):
