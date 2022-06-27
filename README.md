@@ -162,16 +162,16 @@ env = gym.make('Pogema-v0', grid_config=grid_config)
 
 
 ## Citation
-If you use this repository in your research or wish to cite it, please make a reference to our IEEE paper: 
+If you use this repository in your research or wish to cite it, please make a reference to our paper: 
 ```
-@article{skrynnik2021hybrid,
-  title={Hybrid Policy Learning for Multi-Agent Pathfinding},
-  author={Skrynnik, Alexey and Yakovleva, Alexandra and Davydov, Vasilii and Yakovlev, Konstantin and Panov, Aleksandr I},
-  journal={IEEE Access},
-  volume={9},
-  pages={126034--126047},
-  year={2021},
-  publisher={IEEE}
+@misc{https://doi.org/10.48550/arxiv.2206.10944,
+  doi = {10.48550/ARXIV.2206.10944},  
+  url = {https://arxiv.org/abs/2206.10944},
+  author = {Skrynnik, Alexey and Andreychuk, Anton and Yakovlev, Konstantin and Panov, Aleksandr I.},
+  keywords = {Machine Learning (cs.LG), Artificial Intelligence (cs.AI), Multiagent Systems (cs.MA), FOS: Computer and information sciences, FOS: Computer and information sciences},
+  title = {POGEMA: Partially Observable Grid Environment for Multiple Agents},
+  publisher = {arXiv},
+  year = {2022},
+  copyright = {arXiv.org perpetual, non-exclusive license}
 }
 ```
-We are also planning to write a separate paper (pre-print) dedicated to POGEMA entirely. The reference will appear here soon.
