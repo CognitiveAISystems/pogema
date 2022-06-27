@@ -79,13 +79,16 @@ class GridConfig(BaseModel, ):
 
     @validator('agents_xy')
     def agents_xy_validation(cls, v, values):
-        cls.check_positions(v, values['size'])
-        values['num_agents'] = len(v)
+        if v is not None:
+            cls.check_positions(v, values['size'])
+            values['num_agents'] = len(v)
         return v
 
     @validator('targets_xy')
     def targets_xy_validation(cls, v, values):
-        cls.check_positions(v, values['size'])
+        if v is not None:
+            cls.check_positions(v, values['size'])
+            values['num_agents'] = len(v)
         return v
 
     @staticmethod

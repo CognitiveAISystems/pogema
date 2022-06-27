@@ -185,7 +185,7 @@ def test_custom_starts_and_finishes_random():
 
 
 def test_out_of_bounds_for_custom_positions():
-    GridConfig(seed=12, size=17, agents_xy=[[0, 16]], targets_xy=[[16, 0]])
+    Grid(GridConfig(seed=12, size=17, agents_xy=[[0, 16]], targets_xy=[[16, 0]]))
 
     with pytest.raises(IndexError):
         GridConfig(seed=12, size=17, agents_xy=[[0, 17]], targets_xy=[[0, 0]])
@@ -201,3 +201,8 @@ def test_duplicated_params():
     grid_map = "Aa"
     with pytest.raises(KeyError):
         GridConfig(agents_xy=[[0, 0]], targets_xy=[[0, 0]], map=grid_map)
+
+
+def test_custom_grid_with_empty_agents_and_targets():
+    grid_map = """...."""
+    Grid(GridConfig(agents_xy=None, targets_xy=None, map=grid_map, num_agents=1))
