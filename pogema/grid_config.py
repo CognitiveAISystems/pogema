@@ -62,7 +62,8 @@ class GridConfig(BaseModel, ):
         if isinstance(v, str):
             v, agents_xy, targets_xy = cls.str_map_to_list(v, values['FREE'], values['OBSTACLE'])
             if agents_xy and targets_xy and values['agents_xy'] is not None and values['targets_xy'] is not None:
-                raise OverflowError("Can't create task. Please provide agents_xy and targets_xy ONLY with ONE method(either with parameters or with map).")
+                raise KeyError("""Can't create task. Please provide agents_xy and targets_xy only ones.
+                Either with parameters or with a map.""")
             elif agents_xy and targets_xy:
                 values['agents_xy'] = agents_xy
                 values['targets_xy'] = targets_xy
@@ -78,21 +79,24 @@ class GridConfig(BaseModel, ):
 
     @validator('agents_xy')
     def agents_xy_validation(cls, v, values):
-        cls.check_positions(v, values)
-        values['num_agents'] = len(v)
+        if v is not None:
+            cls.check_positions(v, values['size'])
+            values['num_agents'] = len(v)
         return v
 
     @validator('targets_xy')
     def targets_xy_validation(cls, v, values):
-        cls.check_positions(v, values)
+        if v is not None:
+            cls.check_positions(v, values['size'])
+            values['num_agents'] = len(v)
         return v
 
     @staticmethod
-    def check_positions(v, values):
+    def check_positions(v, size):
         for position in v:
             x, y = position
-            assert 0 <= x < values['size'] and 0 <= y < values['size'], "Position is out of bounds!"
-
+            if not (0 <= x < size and 0 <= y < size):
+                raise IndexError("Position is out of bounds!")
 
     @staticmethod
     def str_map_to_list(str_map, free, obstacle):

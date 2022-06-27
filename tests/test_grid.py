@@ -173,34 +173,36 @@ def test_str_custom_map():
     assert (np.isclose(10, grid.config.size))
 
 
-def test_custom_starts_and_finishes_map():
-    grid = """
-    .....#.....
-    .....#.....
-    ...........
-    .....#.....
-    .....#.....
-    #.####.....
-    .....###.##
-    .....#.....
-    .....#.....
-    ...........
-    .....#.....
-    """
-    grid_config = GridConfig(map=grid, num_agents=2, agents_xy=[(0,0), (1,1)], targets_xy=[(2,2), (3,3)])
-    env = gym.make('Pogema-v0', grid_config=grid_config)
-    obs = env.reset()
-    r = grid_config.obs_radius
-    assert [(x - r, y - r) for x, y in env.grid.positions_xy] == [(0,0), (1,1)] and \
-        [(x - r, y - r) for x, y in env.grid.finishes_xy] == [(2,2), (3,3)]
-
-
 def test_custom_starts_and_finishes_random():
-    agents_xy = [(x,x) for x in range(8)]
-    targets_xy = [(x,x) for x in range(8,16)]
-    grid_config = GridConfig(size=16, num_agents=8, agents_xy=agents_xy, targets_xy=targets_xy)
+    agents_xy = [(x, x) for x in range(8)]
+    targets_xy = [(x, x) for x in range(8, 16)]
+    grid_config = GridConfig(seed=12, size=16, num_agents=8, agents_xy=agents_xy, targets_xy=targets_xy)
     env = gym.make('Pogema-v0', grid_config=grid_config)
-    obs = env.reset()
+    env.reset()
     r = grid_config.obs_radius
     assert [(x - r, y - r) for x, y in env.grid.positions_xy] == agents_xy and \
-        [(x - r, y - r) for x, y in env.grid.finishes_xy] == targets_xy
+           [(x - r, y - r) for x, y in env.grid.finishes_xy] == targets_xy
+
+
+def test_out_of_bounds_for_custom_positions():
+    Grid(GridConfig(seed=12, size=17, agents_xy=[[0, 16]], targets_xy=[[16, 0]]))
+
+    with pytest.raises(IndexError):
+        GridConfig(seed=12, size=17, agents_xy=[[0, 17]], targets_xy=[[0, 0]])
+    with pytest.raises(IndexError):
+        GridConfig(seed=12, size=17, agents_xy=[[0, 0]], targets_xy=[[0, 17]])
+    with pytest.raises(IndexError):
+        GridConfig(seed=12, size=17, agents_xy=[[-1, 0]], targets_xy=[[0, 0]])
+    with pytest.raises(IndexError):
+        GridConfig(seed=12, size=17, agents_xy=[[0, 0]], targets_xy=[[0, -1]])
+
+
+def test_duplicated_params():
+    grid_map = "Aa"
+    with pytest.raises(KeyError):
+        GridConfig(agents_xy=[[0, 0]], targets_xy=[[0, 0]], map=grid_map)
+
+
+def test_custom_grid_with_empty_agents_and_targets():
+    grid_map = """...."""
+    Grid(GridConfig(agents_xy=None, targets_xy=None, map=grid_map, num_agents=1))

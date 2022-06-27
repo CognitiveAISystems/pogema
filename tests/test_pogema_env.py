@@ -40,7 +40,7 @@ def test_moving():
 
 def test_types():
     env = make_pogema(GridConfig(num_agents=2, size=6, obs_radius=2, density=0.3, seed=42))
-    obs = env.reset()
+    env.reset()
 
     # todo replace float64 with float32 in grid and add tests
     # print(obs[0].dtype)

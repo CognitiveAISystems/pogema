@@ -1,7 +1,6 @@
 from functools import reduce
 
 import numpy as np
-import pytest
 
 from pogema import GridConfig
 from pogema.integrations.make_pogema import make_pogema
