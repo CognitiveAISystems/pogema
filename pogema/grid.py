@@ -212,10 +212,10 @@ class Grid:
                     agent_id = positions_map.get((line_index, cell_index), None)
                     finish_id = finishes_map.get((line_index, cell_index), None)
 
-                    if agent_id is not None:
+                    if agent_id is not None and agent_id not in self.inactive:
                         out += str(utils.colorize(' ' + chars[agent_id % len(chars)] + ' ', color='red', bold=True,
                                                   highlight=False))
-                    elif finish_id is not None:
+                    elif finish_id is not None and agent_id not in self.inactive:
                         out += str(
                             utils.colorize('|' + chars[finish_id % len(chars)] + '|', 'white', highlight=False))
                     else:
