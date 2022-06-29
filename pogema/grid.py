@@ -215,7 +215,7 @@ class Grid:
                     if agent_id is not None and agent_id not in self.inactive:
                         out += str(utils.colorize(' ' + chars[agent_id % len(chars)] + ' ', color='red', bold=True,
                                                   highlight=False))
-                    elif finish_id is not None and agent_id not in self.inactive:
+                    elif finish_id is not None and finish_id not in self.inactive:
                         out += str(
                             utils.colorize('|' + chars[finish_id % len(chars)] + '|', 'white', highlight=False))
                     else:
