@@ -33,10 +33,12 @@ class Grid:
                 s_x, s_y = start_xy
                 f_x, f_y = finish_xy
                 if self.config.map is not None and obstacles[s_x, s_y] == grid_config.OBSTACLE:
-                    warnings.warn(f"There is an obstacle on a start point ({s_x}, {s_y}), replacing with free cell", Warning, stacklevel=2)
+                    warnings.warn(f"There is an obstacle on a start point ({s_x}, {s_y}), replacing with free cell",
+                                  Warning, stacklevel=2)
                 obstacles[s_x, s_y] = grid_config.FREE
                 if self.config.map is not None and obstacles[f_x, f_y] == grid_config.OBSTACLE:
-                    warnings.warn(f"There is an obstacle on a finish point ({s_x}, {s_y}), replacing with free cell", Warning, stacklevel=2)
+                    warnings.warn(f"There is an obstacle on a finish point ({s_x}, {s_y}), replacing with free cell",
+                                  Warning, stacklevel=2)
                 obstacles[f_x, f_y] = grid_config.FREE
         else:
             starts_xy, finishes_xy = generate_positions_and_targets_fast(obstacles, self.config)
@@ -203,8 +205,8 @@ class Grid:
     def render(self, mode='human'):
         outfile = StringIO() if mode == 'ansi' else sys.stdout
         chars = string.digits + string.ascii_letters + string.punctuation
-        positions_map = {(x, y): id_ for id_, (x, y) in enumerate(self.positions_xy)}
-        finishes_map = {(x, y): id_ for id_, (x, y) in enumerate(self.finishes_xy)}
+        positions_map = {(x, y): id_ for id_, (x, y) in enumerate(self.positions_xy) if id_ not in self.inactive}
+        finishes_map = {(x, y): id_ for id_, (x, y) in enumerate(self.finishes_xy) if id_ not in self.inactive}
         for line_index, line in enumerate(self.obstacles):
             out = ''
             for cell_index, cell in enumerate(line):
@@ -212,10 +214,10 @@ class Grid:
                     agent_id = positions_map.get((line_index, cell_index), None)
                     finish_id = finishes_map.get((line_index, cell_index), None)
 
-                    if agent_id is not None and agent_id not in self.inactive:
+                    if agent_id is not None:
                         out += str(utils.colorize(' ' + chars[agent_id % len(chars)] + ' ', color='red', bold=True,
                                                   highlight=False))
-                    elif finish_id is not None and agent_id not in self.inactive:
+                    elif finish_id is not None:
                         out += str(
                             utils.colorize('|' + chars[finish_id % len(chars)] + '|', 'white', highlight=False))
                     else:
