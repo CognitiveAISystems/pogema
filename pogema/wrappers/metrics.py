@@ -1,76 +1,105 @@
 import gym
 
 
-class MetricsWrapper(gym.Wrapper):
-    def __init__(self, env, group_name='metrics'):
-        super().__init__(env)
-        self._ISR = None
-        self._group_name = group_name
+class AbstractMetric(gym.Wrapper):
+    def _compute_stats(self, step, is_on_goal, truncated):
+        raise NotImplementedError
 
-    def update_group_name(self, group_name):
-        self._group_name = group_name
+    def __init__(self, env):
+        super().__init__(env)
+        self._current_step = 0
 
     def step(self, action):
         obs, reward, done, infos = self.env.step(action)
+        truncated = all(done)
+        metric = self._compute_stats(self._current_step, self.was_on_goal, all(done))
+        self._current_step += 1
+        if truncated:
+            self._current_step = 0
 
-        for agent_idx in range(self.env.get_num_agents()):
-            infos[agent_idx][self._group_name] = infos[agent_idx].get(self._group_name, {})
-
-            if done[agent_idx]:
-                infos[agent_idx][self._group_name].update(Done=True)
-                if agent_idx not in self._ISR:
-                    self._ISR[agent_idx] = float('TimeLimit.truncated' not in infos[agent_idx])
-
-        if all(done):
-            not_tl_truncated = all(['TimeLimit.truncated' not in info for info in infos])
-            infos[0][self._group_name].update(CSR=float(not_tl_truncated))
-
-            for agent_idx in range(self.env.get_num_agents()):
-                infos[agent_idx][self._group_name].update(ISR=self._ISR[agent_idx])
+        if metric:
+            if 'metrics' not in infos[0]:
+                infos[0]['metrics'] = {}
+            infos[0]['metrics'].update(**metric)
 
         return obs, reward, done, infos
 
-    def reset(self, **kwargs):
-        self._ISR = {}
-        return self.env.reset(**kwargs)
 
+class LifeLongAverageThroughputMetric(AbstractMetric):
 
-class MetricsWrapperLifeLong(gym.Wrapper):
-    def __init__(self, env, group_name='metrics_life_long'):
+    def __init__(self, env):
         super().__init__(env)
-        self._AchievedGoals = None
-        self._LastGoal = None
-        self._group_name = group_name
-        self._num_agents = self.env.get_num_agents()
-        self._step: int = 0
+        self._solved_instances = 0
 
-    def update_group_name(self, group_name):
-        self._group_name = group_name
+    def _compute_stats(self, step, is_on_goal, truncated):
+        for agent_idx, on_goal in enumerate(is_on_goal):
+            if on_goal:
+                self._solved_instances += 1
+        if truncated:
+            result = {'avg_throughput': self._solved_instances / self.grid_config.max_episode_steps}
+            self._solved_instances = 0
+            return result
 
-    def step(self, action):
-        obs, reward, done, infos = self.env.step(action)
 
-        self._step += 1
-        for agent_idx in range(self._num_agents):
-            infos[agent_idx][self._group_name] = infos[agent_idx].get(self._group_name, {})
+class NonDisappearCSRMetric(AbstractMetric):
 
-            if done[agent_idx]:
-                infos[agent_idx][self._group_name].update(Done=True)
-                self._AchievedGoals[agent_idx] += float('TimeLimit.truncated' not in infos[agent_idx])
-                self._LastGoal[agent_idx] = self._step
+    def _compute_stats(self, step, is_on_goal, truncated):
+        if truncated:
+            return {'CSR': float(all(is_on_goal))}
 
-        if all(done):
-            infos[0][self._group_name].update(MinimumAchieved=min(self._AchievedGoals))
 
-            for agent_idx in range(self._num_agents):
-                infos[agent_idx][self._group_name].update(AchievedGoals=self._AchievedGoals[agent_idx])
-                if self._AchievedGoals[agent_idx]:
-                    infos[agent_idx][self._group_name].\
-                        update(AverageTimeToGoal=self._LastGoal[agent_idx] / self._AchievedGoals[agent_idx])
+class NonDisappearISRMetric(AbstractMetric):
 
-        return obs, reward, done, infos
+    def _compute_stats(self, step, is_on_goal, truncated):
+        if truncated:
+            return {'ISR': float(sum(is_on_goal)) / self.get_num_agents()}
 
-    def reset(self, **kwargs):
-        self._AchievedGoals = [0] * self._num_agents
-        self._LastGoal = [0] * self._num_agents
-        return self.env.reset(**kwargs)
+
+class NonDisappearEpLengthMetric(AbstractMetric):
+
+    def _compute_stats(self, step, is_on_goal, truncated):
+        if truncated:
+            return {'ep_length': step}
+
+
+class EpLengthMetric(AbstractMetric):
+    def __init__(self, env):
+        super().__init__(env)
+        self._solve_time = [None for _ in range(self.get_num_agents())]
+
+    def _compute_stats(self, step, is_on_goal, truncated):
+        for idx, on_goal in enumerate(is_on_goal):
+            if self._solve_time[idx] is None:
+                if on_goal or truncated:
+                    self._solve_time[idx] = step
+
+        if truncated:
+            result = {'ep_length': sum(self._solve_time) / self.get_num_agents() + 1}
+            self._solve_time = [None for _ in range(self.get_num_agents())]
+            return result
+
+
+class CSRMetric(AbstractMetric):
+    def __init__(self, env):
+        super().__init__(env)
+        self._solved_instances = 0
+
+    def _compute_stats(self, step, is_on_goal, truncated):
+        self._solved_instances += sum(is_on_goal)
+        if truncated:
+            results = {'CSR': float(self._solved_instances == self.get_num_agents())}
+            self._solved_instances = 0
+            return results
+
+
+class ISRMetric(AbstractMetric):
+    def __init__(self, env):
+        super().__init__(env)
+        self._solved_instances = 0
+
+    def _compute_stats(self, step, is_on_goal, truncated):
+        self._solved_instances += sum(is_on_goal)
+        if truncated:
+            results = {'ISR': self._solved_instances / self.get_num_agents()}
+            self._solved_instances = 0
+            return results

@@ -34,14 +34,14 @@ setup(
     author='Alexey Skrynnik',
     license='MIT',
     version=find_version("pogema", "__init__.py"),
-    description='Partially Observable Grid Environment for Multi-Agent RL',
+    description='Partially Observable Grid Environment for Multiple Agents',
     long_description=long_description,
     long_description_content_type='text/markdown',
     url='https://github.com/AIRI-Institute/pogema',
     install_requires=[
-        "gym>=0.18.3",
-        "numpy>=1.19.2",
-        "pydantic>=1.8.2",
+        "gym>=0.18.3,<=0.25.0",
+        "numpy>=1.19.2,<=1.23.1",
+        "pydantic>=1.8.2,<=1.9.1",
     ],
     extras_require={
 

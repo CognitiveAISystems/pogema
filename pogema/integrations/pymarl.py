@@ -28,9 +28,7 @@ class PyMarlPogema:
         info = {}
         if all(dones):
             info.update(CSR=infos[0]['metrics']['CSR'])
-            num_agents = self.env.get_num_agents()
-            mean_isr = sum([infos[idx]['metrics']['ISR'] for idx in range(num_agents)]) / num_agents
-            info.update(ISR=mean_isr)
+            info.update(ISR=infos[0]['metrics']['ISR'])
 
         return sum(rewards), all(dones), info
 
@@ -65,7 +63,7 @@ class PyMarlPogema:
         return 5
 
     def reset(self):
-        self._grid_config = self.env.config
+        self._grid_config = self.env.grid_config
         self._observations = self.env.reset()
         return np.array(self._observations).flatten()
 

@@ -1,20 +1,18 @@
 import sys
 from typing import Optional, Union
 from pydantic import BaseModel, validator
-import pydantic
+
 if sys.version_info >= (3, 8):
     from typing import Literal
 else:
     from typing_extensions import Literal
 
-class Config:
-    arbitrary_types_allowed = True
 
 class GridConfig(BaseModel, ):
     FREE: Literal[0] = 0
     OBSTACLE: Literal[1] = 1
     MOVES: list = [[0, 0], [-1, 0], [1, 0], [0, -1], [0, 1], ]
-    pogema_type: Literal['disappearing', 'life_long', 'non_disappearing'] = 'disappearing'
+    on_target: Literal['finish', 'nothing', 'restart'] = 'finish'
     seed: Optional[int] = None
     size: int = 8
     density: float = 0.3
@@ -22,17 +20,18 @@ class GridConfig(BaseModel, ):
     obs_radius: int = 5
     agents_xy: Optional[list] = None
     targets_xy: Optional[list] = None
-
+    collision_system: Literal['block_both', 'priority'] = 'priority'
+    persistent: bool = False
+    observation_type: Literal['POMAPF', 'MAPF', 'default'] = 'default'
     map: Union[list, str] = None
 
-    disappear_on_goal: Literal[True, False] = True
     empty_outside: bool = True
 
     map_name: str = None
 
     integration: Literal['SampleFactory', 'PyMARL', 'rllib', 'gym', 'PettingZoo'] = None
     max_episode_steps: int = 64
-    steps_before_renew_target: Optional[int] = None
+    auto_reset: Optional[bool] = None
 
     @validator('seed')
     def seed_initialization(cls, v):
@@ -136,3 +135,111 @@ class GridConfig(BaseModel, ):
 
         assert len(targets_xy) == len(agents_xy)
         return obstacles, agents_xy, targets_xy
+
+
+class PredefinedDifficultyConfig(GridConfig):
+    density: float = 0.3
+    collision_system: Literal['priority'] = 'priority'
+    obs_radius: Literal[5] = 5
+    observation_type: Literal['default'] = 'default'
+
+    @validator('density')
+    def density_restrictions(cls, v):
+        assert 0.299999 <= v <= 0.3000001, "density for that predefined configuration must be equal to 0.3"
+        return v
+
+
+class Easy8x8(PredefinedDifficultyConfig):
+    size: Literal[8] = 8
+    max_episode_steps: Literal[64] = 64
+    num_agents: Literal[1] = 1
+
+
+class Normal8x8(PredefinedDifficultyConfig):
+    size: Literal[8] = 8
+    max_episode_steps: Literal[64] = 64
+    num_agents: Literal[2] = 2
+
+
+class Hard8x8(PredefinedDifficultyConfig):
+    size: Literal[8] = 8
+    max_episode_steps: Literal[64] = 64
+    num_agents: Literal[4] = 4
+
+
+class ExtraHard8x8(PredefinedDifficultyConfig):
+    size: Literal[8] = 8
+    max_episode_steps: Literal[64] = 64
+    num_agents: Literal[8] = 8
+
+
+class Easy16x16(PredefinedDifficultyConfig):
+    size: Literal[16] = 16
+    max_episode_steps: Literal[128] = 128
+    num_agents: Literal[4] = 4
+
+
+class Normal16x16(PredefinedDifficultyConfig):
+    size: Literal[16] = 16
+    max_episode_steps: Literal[128] = 128
+    num_agents: Literal[8] = 8
+
+
+class Hard16x16(PredefinedDifficultyConfig):
+    size: Literal[16] = 16
+    max_episode_steps: Literal[128] = 128
+    num_agents: Literal[16] = 16
+
+
+class ExtraHard16x16(PredefinedDifficultyConfig):
+    size: Literal[16] = 16
+    max_episode_steps: Literal[128] = 128
+    num_agents: Literal[32] = 32
+
+
+class Easy32x32(PredefinedDifficultyConfig):
+    size: Literal[32] = 32
+    max_episode_steps: Literal[256] = 256
+    num_agents: Literal[16] = 16
+
+
+class Normal32x32(PredefinedDifficultyConfig):
+    size: Literal[32] = 32
+    max_episode_steps: Literal[256] = 256
+    num_agents: Literal[32] = 32
+
+
+class Hard32x32(PredefinedDifficultyConfig):
+    size: Literal[32] = 32
+    max_episode_steps: Literal[256] = 256
+    num_agents: Literal[64] = 64
+
+
+class ExtraHard32x32(PredefinedDifficultyConfig):
+    size: Literal[32] = 32
+    max_episode_steps: Literal[256] = 256
+    num_agents: Literal[128] = 128
+
+
+class Easy64x64(PredefinedDifficultyConfig):
+    size: Literal[32] = 64
+    max_episode_steps: Literal[512] = 512
+    num_agents: Literal[16] = 64
+
+
+class Normal64x64(PredefinedDifficultyConfig):
+    size: Literal[32] = 64
+    max_episode_steps: Literal[512] = 512
+    num_agents: Literal[16] = 128
+
+
+class Hard64x64(PredefinedDifficultyConfig):
+    size: Literal[32] = 64
+    max_episode_steps: Literal[512] = 512
+    num_agents: Literal[16] = 256
+
+
+class ExtraHard64x64(PredefinedDifficultyConfig):
+    size: Literal[32] = 64
+    max_episode_steps: Literal[512] = 512
+    num_agents: Literal[16] = 512

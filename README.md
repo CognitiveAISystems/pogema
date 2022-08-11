@@ -27,10 +27,8 @@ Just install from PyPI:
 ## Using Example
 
 ```python
-import gym
-import pogema
-
-env = gym.make("Pogema-8x8-hard-v0")
+from pogema import pogema_v0, Hard8x8
+env = pogema_v0(grid_config=Hard8x8())
 
 obs = env.reset()
 
@@ -45,24 +43,24 @@ while not all(done):
 
 ## Environments
 
-| Environment | agents density  | num agents  |  horizon    |
-| -------------------------- | ----- | ----- | ---- |
-| Pogema-8x8-easy-v0         | 2.2%  |   1   |  64  |
-| Pogema-8x8-normal-v0       | 4.5%  |   2   |  64  |
-| Pogema-8x8-hard-v0         | 8.9%  |   4   |  64  |
-| Pogema-8x8-extra-hard-v0   | 17.8% |   8   |  64  |
-| Pogema-16x16-easy-v0       | 2.2%  |   4   |  128 |
-| Pogema-16x16-normal-v0     | 4.5%  |   8   |  128 |
-| Pogema-16x16-hard-v0       | 8.9%  |   16  |  128 |
-| Pogema-16x16-extra-hard-v0 | 17.8% |   32  |  128 |
-| Pogema-32x32-easy-v0       | 2.2%  |   16  |  256 |
-| Pogema-32x32-normal-v0     | 4.5%  |   32  |  256 |
-| Pogema-32x32-hard-v0       | 8.9%  |   64  |  256 |
-| Pogema-32x32-extra-hard-v0 | 17.8% |   128 |  256 |
-| Pogema-64x64-easy-v0       | 2.2%  |   64  |  512 |
-| Pogema-64x64-normal-v0     | 4.5%  |   128 |  512 |
-| Pogema-64x64-hard-v0       | 8.9%  |   256 |  512 |
-| Pogema-64x64-extra-hard-v0 | 17.8% |   512 |  512 |   
+| Config | agents density  | num agents  |  horizon    |
+| ----------------- | ----- | ----- | ---- |
+| Easy8x8           | 2.2%  |   1   |  64  |
+| Normal8x8         | 4.5%  |   2   |  64  |
+| Hard8x8           | 8.9%  |   4   |  64  |
+| ExtraHard8x8      | 17.8% |   8   |  64  |
+| Easy16x16         | 2.2%  |   4   |  128 |
+| Normal16x16       | 4.5%  |   8   |  128 |
+| Hard16x16         | 8.9%  |   16  |  128 |
+| ExtraHard16x16    | 17.8% |   32  |  128 |
+| Easy32x32         | 2.2%  |   16  |  256 |
+| Normal32x32       | 4.5%  |   32  |  256 |
+| Hard32x32         | 8.9%  |   64  |  256 |
+| ExtraHard32x32    | 17.8% |   128 |  256 |
+| Easy64x64         | 2.2%  |   64  |  512 |
+| Normal64x64       | 4.5%  |   128 |  512 |
+| Hard64x64         | 8.9%  |   256 |  512 |
+| ExtraHard64x64    | 17.8% |   512 |  512 |   
 
 ## Interfaces
 Pogema provides integrations with a range of MARL frameworks: PettingZoo, PyMARL and SampleFactory. 
@@ -70,29 +68,26 @@ Pogema provides integrations with a range of MARL frameworks: PettingZoo, PyMARL
 ### PettingZoo
 
 ```python
-import gym
-import pogema
+from pogema import pogema_v0, GridConfig
 
 # Create Pogema environment with PettingZoo interface
-env = gym.make("Pogema-8x8-hard-v0", integration="PettingZoo")
+env = pogema_v0(GridConfig(integration="PettingZoo"))
 ```
 
 ### PyMARL
 
 ```python
-import gym
-import pogema
+from pogema import pogema_v0, GridConfig
 
-env = gym.make("Pogema-8x8-hard-v0", integration="PyMARL")
+env = pogema_v0(GridConfig(integration="PyMARL"))
 ```
 
 ### SampleFactory
 
 ```python
-import gym
-import pogema
+from pogema import pogema_v0, GridConfig
 
-env = gym.make("Pogema-8x8-hard-v0", integration="SampleFactory")
+env = pogema_v0(GridConfig(integration="SampleFactory"))
 ```
 
 ### Classic Gym
@@ -102,9 +97,9 @@ env = gym.make("Pogema-8x8-hard-v0", integration="SampleFactory")
 import gym
 import pogema
 
-# This interface is suitable only for 
-# single-agent partially observable pathfinding tasks
-env = gym.make("Pogema-8x8-easy-v0", integration="SampleFactory")
+# This interface provides experience only for agent with id=0,
+# other agents will take random actions.
+env = gym.make("Pogema-v0")
 ```
 
 
@@ -112,8 +107,7 @@ env = gym.make("Pogema-8x8-easy-v0", integration="SampleFactory")
 
 ### Random maps
 ```python
-import gym
-from pogema import GridConfig
+from pogema import pogema_v0, GridConfig
 
 # Define random configuration
 grid_config = GridConfig(num_agents=4,  # number of agents
@@ -126,7 +120,7 @@ grid_config = GridConfig(num_agents=4,  # number of agents
                          obs_radius=3,  # defines field of view
                          )
 
-env = gym.make('Pogema-v0', grid_config=grid_config)
+env = pogema_v0(grid_config=grid_config)
 env.reset()
 env.render()
 
@@ -134,8 +128,7 @@ env.render()
 
 ### Custom maps
 ```python
-import gym
-from pogema import GridConfig
+from pogema import pogema_v0, GridConfig
 
 grid = """
 .....#.....
@@ -155,7 +148,7 @@ grid = """
 grid_config = GridConfig(map=grid, num_agents=8)
 
 # Create custom Pogema environment
-env = gym.make('Pogema-v0', grid_config=grid_config)
+env = pogema_v0(grid_config=grid_config)
 ```
 
 

@@ -1,3 +1,5 @@
+from copy import deepcopy
+
 import gym
 
 
@@ -9,7 +11,16 @@ class IsMultiAgentWrapper(gym.Wrapper):
 
     @property
     def num_agents(self):
-        return self.env.get_num_agents()
+        return self.get_num_agents()
+
+
+class MetricsForwardingWrapper(gym.Wrapper):
+    def step(self, action):
+        observations, rewards, dones, infos = self.env.step(action)
+        for info in infos:
+            if 'metrics' in info:
+                info.update(episode_extra_stats=deepcopy(info['metrics']))
+        return observations, rewards, dones, infos
 
 
 class AutoResetWrapper(gym.Wrapper):

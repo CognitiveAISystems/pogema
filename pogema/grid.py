@@ -8,7 +8,7 @@ import numpy as np
 from gym import utils
 from io import StringIO
 
-from pogema.generator import generate_obstacles, generate_positions_and_targets_fast,\
+from pogema.generator import generate_obstacles, generate_positions_and_targets_fast, \
     get_components, generate_new_target
 from .grid_config import GridConfig
 
@@ -24,6 +24,7 @@ class Grid:
             obstacles = generate_obstacles(self.config)
         else:
             obstacles = np.array([np.array(line) for line in self.config.map])
+        obstacles = obstacles.astype(np.int32)
 
         if grid_config.targets_xy and grid_config.agents_xy:
             starts_xy, finishes_xy = grid_config.agents_xy, grid_config.targets_xy
@@ -54,7 +55,7 @@ class Grid:
                 starts_xy, finishes_xy = generate_positions_and_targets_fast(obstacles, self.config)
 
         if not starts_xy or not finishes_xy or len(starts_xy) != len(finishes_xy):
-            raise OverflowError("Can't create task. Please check grid config, especially density, num_agent and map.")
+            raise OverflowError("Can't create task. Please check grid grid_config, especially density, num_agent and map.")
 
         if add_artificial_border:
             r = self.config.obs_radius
@@ -84,8 +85,7 @@ class Grid:
         self.finishes_xy = finishes_xy
         self.positions_xy = starts_xy
         self._initial_xy = deepcopy(starts_xy)
-        self.inactive = set()
-        self.active = set([agent_id for agent_id in range(self.config.num_agents)])
+        self.is_active = {agent_id: True for agent_id in range(self.config.num_agents)}
 
     def get_obstacles(self, ignore_borders=False):
         gc = self.config
@@ -105,13 +105,13 @@ class Grid:
         return deepcopy(self.config)
 
     # def _get_grid_config(self) -> GridConfig:
-    #     return self.env.config
+    #     return self.env.grid_config
 
     def _prepare_positions(self, positions, only_active, ignore_borders):
         gc = self.config
 
         if only_active:
-            positions = self._filter_inactive(positions, list(self.active))
+            positions = self._filter_inactive(positions, [idx for idx, active in self.is_active.items() if active])
 
         if ignore_borders:
             positions = self._cut_borders_xy(positions, gc.obs_radius)
@@ -173,12 +173,12 @@ class Grid:
     def get_obstacles_for_agent(self, agent_id):
         x, y = self.positions_xy[agent_id]
         r = self.config.obs_radius
-        return self.obstacles[x - r:x + r + 1, y - r:y + r + 1]
+        return self.obstacles[x - r:x + r + 1, y - r:y + r + 1].astype(np.float32)
 
     def get_positions(self, agent_id):
         x, y = self.positions_xy[agent_id]
         r = self.config.obs_radius
-        return self.positions[x - r:x + r + 1, y - r:y + r + 1]
+        return self.positions[x - r:x + r + 1, y - r:y + r + 1].astype(np.float32)
 
     def get_target(self, agent_id):
 
@@ -201,13 +201,13 @@ class Grid:
         dx = min(dx, c.obs_radius) if dx >= 0 else max(dx, -c.obs_radius)
         dy = min(dy, c.obs_radius) if dy >= 0 else max(dy, -c.obs_radius)
         result[c.obs_radius - dx, c.obs_radius - dy] = 1
-        return result
+        return result.astype(np.float32)
 
     def render(self, mode='human'):
         outfile = StringIO() if mode == 'ansi' else sys.stdout
         chars = string.digits + string.ascii_letters + string.punctuation
-        positions_map = {(x, y): id_ for id_, (x, y) in enumerate(self.positions_xy) if id_ not in self.inactive}
-        finishes_map = {(x, y): id_ for id_, (x, y) in enumerate(self.finishes_xy) if id_ not in self.inactive}
+        positions_map = {(x, y): id_ for id_, (x, y) in enumerate(self.positions_xy) if self.is_active[id_]}
+        finishes_map = {(x, y): id_ for id_, (x, y) in enumerate(self.finishes_xy) if self.is_active[id_]}
         for line_index, line in enumerate(self.obstacles):
             out = ''
             for cell_index, cell in enumerate(line):
@@ -232,6 +232,15 @@ class Grid:
             with closing(outfile):
                 return outfile.getvalue()
 
+    def move_agent_to_cell(self, agent_id, x, y):
+        if self.positions[self.positions_xy[agent_id]] == self.config.FREE:
+            raise KeyError("Agent {} is not in the map".format(agent_id))
+        self.positions[self.positions_xy[agent_id]] = self.config.FREE
+        if self.obstacles[x, y] != self.config.FREE or self.positions[x, y] != self.config.FREE:
+            raise ValueError(f"Can't force agent to blocked position {x} {y}")
+        self.positions_xy[agent_id] = x, y
+        self.positions[self.positions_xy[agent_id]] = self.config.OBSTACLE
+
     def move(self, agent_id, action):
         x, y = self.positions_xy[agent_id]
 
@@ -250,18 +259,25 @@ class Grid:
         return self.positions_xy[agent_id] == self.finishes_xy[agent_id]
 
     def is_active(self, agent_id):
-        return agent_id in self.inactive
+        return self.is_active[agent_id]
 
     def hide_agent(self, agent_id):
-        if agent_id in self.inactive:
+        if not self.is_active[agent_id]:
+            return False
+        self.is_active[agent_id] = False
+
+        self.positions[self.positions_xy[agent_id]] = self.config.FREE
+
+        return True
+
+    def show_agent(self, agent_id):
+        if self.is_active[agent_id]:
             return False
 
-        self.inactive.add(agent_id)
-        self.active.remove(agent_id)
-
-        x, y = self.positions_xy[agent_id]
-        self.positions[x, y] = self.config.FREE
-
+        self.is_active[agent_id] = True
+        if self.positions[self.positions_xy[agent_id]] == self.config.OBSTACLE:
+            raise KeyError("The cell is already occupied")
+        self.positions[self.positions_xy[agent_id]] = self.config.OBSTACLE
         return True
 
 
@@ -285,11 +301,10 @@ class GridLifeLong(Grid):
 
 class CooperativeGrid(Grid):
     def __init__(self, grid_config: GridConfig, add_artificial_border: bool = True, num_retries=10):
-        super().__init__(grid_config)
-        
+        super().__init__(grid_config, add_artificial_border, num_retries)
+
     def move(self, agent_id, action):
         x, y = self.positions_xy[agent_id]
-        fx, fy = self.finishes_xy[agent_id]
         dx, dy = self.config.MOVES[action]
         if self.obstacles[x + dx, y + dy] == self.config.FREE:
             if self.positions[x + dx, y + dy] == self.config.FREE:
@@ -298,4 +313,3 @@ class CooperativeGrid(Grid):
                 y += dy
                 self.positions[x, y] = self.config.OBSTACLE
         self.positions_xy[agent_id] = (x, y)
-        return x == fx and y == fy
