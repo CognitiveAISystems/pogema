@@ -62,6 +62,9 @@ while not all(done):
 | Hard64x64         | 8.9%  |   256 |  512 |
 | ExtraHard64x64    | 17.8% |   512 |  512 |   
 
+## Baselines 
+The [baseline implementations](https://github.com/Tviskaron/pogema-baselines) are available as a separate repository.
+
 ## Interfaces
 Pogema provides integrations with a range of MARL frameworks: PettingZoo, PyMARL and SampleFactory. 
 
