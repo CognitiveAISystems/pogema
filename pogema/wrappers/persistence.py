@@ -10,6 +10,18 @@ class AgentState:
         self.step = step
         self.active = active
 
+    def get_xy(self):
+        return self.x, self.y
+
+    def get_target_xy(self):
+        return self.tx, self.ty
+
+    def is_active(self):
+        return self.active
+
+    def get_step(self):
+        return self.step
+
     def __eq__(self, other):
         o = other
         return self.x == o.x and self.y == o.y and self.tx == o.tx and self.ty == o.ty and self.active == o.active
@@ -67,3 +79,22 @@ class PersistentWrapper(gym.Wrapper):
             self._agent_states.append([self._get_agent_state(self.grid, agent_idx)])
 
         return result
+
+    @staticmethod
+    def agent_state_to_full_list(agent_states, num_steps):
+        result = []
+        current_state_id = 0
+        for episode_step in range(num_steps):
+            if current_state_id < len(agent_states) - 1 and agent_states[current_state_id + 1].step == episode_step:
+                current_state_id += 1
+            result.append(agent_states[current_state_id])
+        return result
+
+    @classmethod
+    def decompress_history(cls, history):
+        max_steps = max([agent_states[-1].step + 1 for agent_states in history])
+        result = [cls.agent_state_to_full_list(agent_states, max_steps) for agent_states in history]
+        return result
+
+    def get_history(self):
+        return self._agent_states

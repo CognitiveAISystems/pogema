@@ -1,15 +1,14 @@
 import os
 import typing
-from copy import deepcopy
 from itertools import cycle
 from gym import logger
 import gym
-from pogema.wrappers.multi_time_limit import MultiTimeLimit
 
 from pydantic import BaseModel
 
 from pogema import GridConfig, pogema_v0
 from pogema.grid import Grid
+from pogema.wrappers.persistence import PersistentWrapper, AgentState
 
 
 class AnimationSettings(BaseModel):
@@ -57,16 +56,12 @@ class GridHolder(BaseModel):
     """
     Holds the grid and the history.
     """
-    agents_xy: list = None
-    agents_xy_history: list = None
-    agents_done_history: list = None
-    targets_xy: list = None
-    targets_xy_history: list = None
     obstacles: typing.Any = None
     episode_length: int = None
     height: int = None
     width: int = None
     colors: dict = None
+    history: list = None
 
 
 class SvgObject:
@@ -159,12 +154,14 @@ class AnimationMonitor(gym.Wrapper):
     """
 
     def __init__(self, env, animation_config=AnimationConfig()):
+        # Wrapping env using PersistenceWrapper for saving the history.
+        env = PersistentWrapper(env)
         super().__init__(env)
+
+        self.history = self.env.get_history()
+
         self.svg_settings: AnimationSettings = AnimationSettings()
         self.animation_config: AnimationConfig = animation_config
-        self.dones_history = None
-        self.agents_xy_history = None
-        self.targets_xy_history = None
 
         self._episode_idx = 0
 
@@ -176,10 +173,7 @@ class AnimationMonitor(gym.Wrapper):
         """
         obs, reward, dones, info = self.env.step(action)
 
-        self.dones_history.append(dones)
-        self.agents_xy_history.append(deepcopy(self.grid.positions_xy))
-        self.targets_xy_history.append(deepcopy(self.grid.finishes_xy))
-        if all(dones):
+        if isinstance(dones, (list, tuple)) and all(dones) or dones:
             save_tau = self.animation_config.save_every_idx_episode
             if save_tau:
                 if (self._episode_idx + 1) % save_tau or save_tau == 1:
@@ -224,11 +218,8 @@ class AnimationMonitor(gym.Wrapper):
         obs = self.env.reset(**kwargs)
 
         self._episode_idx += 1
+        self.history = self.env.get_history()
 
-        # self.grid_config: GridConfig = self.grid_config
-        self.dones_history = [[False for _ in range(self.grid_config.num_agents)]]
-        self.agents_xy_history = [deepcopy(self.grid.positions_xy)]
-        self.targets_xy_history = [deepcopy(self.grid.finishes_xy)]
         return obs
 
     def create_animation(self, animation_config=None):
@@ -246,21 +237,28 @@ class AnimationMonitor(gym.Wrapper):
         colors = cycle(cfg.colors)
         agents_colors = {index: next(colors) for index in range(self.grid_config.num_agents)}
 
-        episode_length = len(self.dones_history)
-
         if anim_cfg.egocentric_idx is not None:
             anim_cfg.egocentric_idx %= self.grid_config.num_agents
 
-        if anim_cfg.egocentric_idx is not None and self.grid_config.on_target == 'finish':
-            for step_idx, dones in enumerate(self.dones_history):
-                if dones[anim_cfg.egocentric_idx] and self.grid_config.on_target != 'restart':
-                    episode_length = min(len(self.dones_history), step_idx + 1)
-                    break
-        gh = GridHolder(agents_xy=grid.positions_xy, width=len(grid.obstacles), height=len(grid.obstacles[0]),
-                        agents_xy_history=self.agents_xy_history, targets_xy_history=self.targets_xy_history,
-                        agents_done_history=self.dones_history,
+        decompressed_history: list[list[AgentState]] = self.env.decompress_history(self.history)
+
+        # Change episode length for egocentric environment
+        if anim_cfg.egocentric_idx is not None:
+            episode_length = decompressed_history[anim_cfg.egocentric_idx][-1].step + 1
+            for agent_idx in range(self.grid_config.num_agents):
+                decompressed_history[agent_idx] = decompressed_history[agent_idx][:episode_length]
+        else:
+            episode_length = len(decompressed_history[0])
+
+        # Add last observation one more time to highlight the final state
+        for agent_idx in range(self.grid_config.num_agents):
+            decompressed_history[agent_idx].append(decompressed_history[agent_idx][-1])
+
+        gh = GridHolder(width=len(grid.obstacles), height=len(grid.obstacles[0]),
                         obstacles=grid.obstacles,
-                        colors=agents_colors, targets_xy=grid.finishes_xy, episode_length=episode_length)
+                        colors=agents_colors,
+                        episode_length=episode_length,
+                        history=decompressed_history, )
 
         render_width, render_height = gh.height * cfg.scale_size, gh.width * cfg.scale_size
         drawing = Drawing(width=render_width, height=render_height, display_inline=False, origin=(0, 0))
@@ -334,20 +332,16 @@ class AnimationMonitor(gym.Wrapper):
         cfg = self.svg_settings
         gh: GridHolder = grid_holder
         ego_idx = animation_config.egocentric_idx
-        x, y = gh.agents_xy_history[0][ego_idx] if gh.agents_xy_history else gh.agents_xy[ego_idx]
+        x, y = gh.history[ego_idx][0].get_xy()
         cx = cfg.draw_start + y * cfg.scale_size
         cy = cfg.draw_start + (gh.width - x - 1) * cfg.scale_size
 
         dr = (self.grid_config.obs_radius + 1) * cfg.scale_size - cfg.stroke_width * 2
-        result = Rectangle(x=cx - dr + cfg.r,
-                           y=cy - dr + cfg.r,
-                           width=2 * dr - 2 * cfg.r,
-                           height=2 * dr - 2 * cfg.r,
-                           stroke=cfg.ego_color,
-                           stroke_width=cfg.stroke_width,
+        result = Rectangle(x=cx - dr + cfg.r, y=cy - dr + cfg.r,
+                           width=2 * dr - 2 * cfg.r, height=2 * dr - 2 * cfg.r,
+                           stroke=cfg.ego_color, stroke_width=cfg.stroke_width,
                            fill='none',
-                           rx=cfg.rx,
-                           stroke_dasharray=cfg.stroke_dasharray,
+                           rx=cfg.rx, stroke_dasharray=cfg.stroke_dasharray,
                            )
 
         return result
@@ -364,17 +358,15 @@ class AnimationMonitor(gym.Wrapper):
         cfg = self.svg_settings
         x_path = []
         y_path = []
-        for agents_xy in gh.agents_xy_history[:gh.episode_length]:
-            x, y = agents_xy[agent_idx]
+        for state in gh.history[agent_idx]:
+            x, y = state.get_xy()
             dr = (self.grid_config.obs_radius + 1) * cfg.scale_size - cfg.stroke_width * 2
             cx = cfg.draw_start + y * cfg.scale_size
             cy = -cfg.draw_start + -(gh.width - x - 1) * cfg.scale_size
             x_path.append(str(cx - dr + cfg.r))
             y_path.append(str(cy - dr + cfg.r))
 
-        visibility = []
-        for dones in gh.agents_done_history[:gh.episode_length]:
-            visibility.append('hidden' if dones[agent_idx] and self.grid_config.on_target == 'finish' else "visible")
+        visibility = ['visible' if state.is_active() else 'hidden' for state in gh.history[agent_idx]]
 
         view.add_animation(self.compressed_anim('x', x_path, cfg.time_scale))
         view.add_animation(self.compressed_anim('y', y_path, cfg.time_scale))
@@ -394,25 +386,20 @@ class AnimationMonitor(gym.Wrapper):
             x_path = []
             y_path = []
             opacity = []
-            for agents_xy in gh.agents_xy_history[:gh.episode_length]:
-                x, y = agents_xy[agent_idx]
+            for agent_state in gh.history[agent_idx]:
+                x, y = agent_state.get_xy()
+
                 x_path.append(str(cfg.draw_start + y * cfg.scale_size))
                 y_path.append(str(-cfg.draw_start + -(gh.width - x - 1) * cfg.scale_size))
 
                 if egocentric_idx is not None:
-                    ego_x, ego_y = agents_xy[egocentric_idx]
+                    ego_x, ego_y = agent_state.get_xy()
                     if self.check_in_radius(x, y, ego_x, ego_y, self.grid_config.obs_radius):
                         opacity.append('1.0')
                     else:
                         opacity.append(str(cfg.shaded_opacity))
 
-            visibility = []
-            if self.grid_config.on_target != 'finish':
-                visibility = ['visible'] * self.grid_config.num_agents
-            else:
-                for dones in gh.agents_done_history[:gh.episode_length]:
-                    visibility.append(
-                        'hidden' if dones[agent_idx] and self.grid_config.on_target == 'finish' else "visible")
+            visibility = ['visible' if state.is_active() else 'hidden' for state in gh.history[agent_idx]]
 
             agent.add_animation(self.compressed_anim('cy', y_path, cfg.time_scale))
             agent.add_animation(self.compressed_anim('cx', x_path, cfg.time_scale))
@@ -496,30 +483,19 @@ class AnimationMonitor(gym.Wrapper):
         cfg = self.svg_settings
         ego_idx = animation_config.egocentric_idx
 
-        for t_idx, target in enumerate(targets):
-            target_idx = ego_idx if ego_idx is not None else t_idx
+        for agent_idx, target in enumerate(targets):
+            target_idx = ego_idx if ego_idx is not None else agent_idx
 
             x_path = []
             y_path = []
-            opacity = []
-            for targets_xy in gh.targets_xy_history[:gh.episode_length]:
-                x, y = targets_xy[target_idx]
+
+            for step_idx, state in enumerate(gh.history[target_idx]):
+                x, y = state.get_target_xy()
                 x_path.append(str(cfg.draw_start + y * cfg.scale_size))
                 y_path.append(str(-cfg.draw_start + -(gh.width - x - 1) * cfg.scale_size))
 
-                if ego_idx is not None:
-                    ego_x, ego_y = targets_xy[ego_idx]
-                    if self.check_in_radius(x, y, ego_x, ego_y, self.grid_config.obs_radius):
-                        opacity.append('1.0')
-                    else:
-                        opacity.append(str(cfg.shaded_opacity))
+            visibility = ['visible' if state.is_active() else 'hidden' for state in gh.history[agent_idx]]
 
-            visibility = []
-            if self.grid_config.on_target == 'restart':
-                visibility = ['visible'] * self.grid_config.num_agents
-            else:
-                for dones in gh.agents_done_history[:gh.episode_length]:
-                    visibility.append('hidden' if dones[target_idx] else "visible")
             if self.grid_config.on_target == 'restart':
                 target.add_animation(self.compressed_anim('cy', y_path, cfg.time_scale))
                 target.add_animation(self.compressed_anim('cx', x_path, cfg.time_scale))
@@ -527,7 +503,7 @@ class AnimationMonitor(gym.Wrapper):
 
     def create_obstacles(self, grid_holder, animation_config):
         """
-
+        Creates the obstacles.
         :param grid_holder:
         :param animation_config:
         :return:
@@ -549,7 +525,7 @@ class AnimationMonitor(gym.Wrapper):
                                         fill=self.svg_settings.obstacle_color)
 
                     if animation_config.egocentric_idx is not None and cfg.egocentric_shaded:
-                        initial_positions = gh.agents_xy_history[0] if gh.agents_xy_history else gh.agents_xy
+                        initial_positions = [agent_states[0].get_xy() for agent_states in gh.history]
                         ego_x, ego_y = initial_positions[animation_config.egocentric_idx]
                         if not self.check_in_radius(x, y, ego_x, ego_y, self.grid_config.obs_radius):
                             obs_settings.update(opacity=cfg.shaded_opacity)
@@ -577,8 +553,8 @@ class AnimationMonitor(gym.Wrapper):
                     continue
                 opacity = []
                 seen = set()
-                for step_idx, agents_xy in enumerate(gh.agents_xy_history[:gh.episode_length]):
-                    ego_x, ego_y = agents_xy[animation_config.egocentric_idx]
+                for step_idx, agent_state in enumerate(gh.history[animation_config.egocentric_idx]):
+                    ego_x, ego_y = agent_state.get_xy()
                     if self.check_in_radius(x, y, ego_x, ego_y, self.grid_config.obs_radius):
                         seen.add((x, y))
                     if (x, y) in seen:
@@ -602,9 +578,10 @@ class AnimationMonitor(gym.Wrapper):
         cfg = self.svg_settings
 
         agents = []
-        initial_positions = gh.agents_xy_history[0] if gh.agents_xy_history else gh.agents_xy
+        initial_positions = [agent_states[0].get_xy() for agent_states in gh.history]
         for idx, (x, y) in enumerate(initial_positions):
-            if gh.agents_done_history[0][idx]:
+
+            if not any([agent_state.is_active() for agent_state in gh.history[idx]]):
                 continue
 
             circle_settings = {}
@@ -635,17 +612,17 @@ class AnimationMonitor(gym.Wrapper):
         gh: GridHolder = grid_holder
         cfg = self.svg_settings
         targets = []
-        for idx, (tx, ty) in enumerate(gh.targets_xy):
-            if gh.agents_done_history[0][idx]:
-                continue
+        for agent_idx, agent_states in enumerate(gh.history):
+
+            tx, ty = agent_states[0].get_target_xy()
             x, y = ty, gh.width - tx - 1
             circle_settings = {}
             circle_settings.update(cx=cfg.draw_start + x * cfg.scale_size,
                                    cy=cfg.draw_start + y * cfg.scale_size,
                                    r=cfg.r,
-                                   stroke=gh.colors[idx], stroke_width=cfg.stroke_width, fill='none')
+                                   stroke=gh.colors[agent_idx], stroke_width=cfg.stroke_width, fill='none')
             if animation_config.egocentric_idx is not None:
-                if animation_config.egocentric_idx != idx:
+                if animation_config.egocentric_idx != agent_idx:
                     continue
 
                 circle_settings.update(stroke=cfg.ego_color)
@@ -655,18 +632,16 @@ class AnimationMonitor(gym.Wrapper):
 
 
 def main():
-    grid_config = GridConfig(size=64, num_agents=1, obs_radius=2, seed=7)
+    grid_config = GridConfig(size=8, num_agents=5, obs_radius=2, seed=9, on_target='finish', max_episode_steps=128)
     env = pogema_v0(grid_config=grid_config)
-    env = MultiTimeLimit(env, max_episode_steps=12)
     env = AnimationMonitor(env)
 
     env.reset()
     done = [False]
 
     while not all(done):
-        if all(done):
-            break
-        _, _, done, _ = env.step([env.action_space.sample() for _ in range(grid_config.num_agents)])
+        _, _, done, _ = env.step(env.sample_actions())
+
     env.save_animation('out-static.svg', AnimationConfig(static=True, save_every_idx_episode=None))
     env.save_animation('out-static-ego.svg', AnimationConfig(egocentric_idx=0, static=True))
     env.save_animation('out-static-no-agents.svg', AnimationConfig(show_agents=False, static=True))

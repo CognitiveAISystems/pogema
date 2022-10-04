@@ -66,6 +66,7 @@ def run_episode(grid_config=None, env=None):
     while not all(dones):
         results.append(env.step(env.sample_actions()))
         dones = results[-1][-2]
+
     return results
 
 
@@ -115,6 +116,17 @@ def test_standard_pogema_animation():
     env = AnimationMonitor(env)
     env.reset()
     run_episode(env=env)
+
+
+def test_gym_pogema_animation():
+    import gym
+    env = gym.make('Pogema-v0',
+                   grid_config=GridConfig(num_agents=2, size=6, obs_radius=2, density=0.3, seed=42, on_target='finish'))
+    env = AnimationMonitor(env)
+    env.reset()
+    done = False
+    while not done:
+        _, _, done, _ = env.step(env.action_space.sample())
 
 
 def test_non_disappearing_pogema():
@@ -175,7 +187,6 @@ def test_predefined_configurations():
     for make_grid_config_func in predefined_grids:
         gc = make_grid_config_func(seed=42)
         assert gc.map_name == make_grid_config_func.__name__
-
 
 
 def test_persistent_env(num_steps=100):
