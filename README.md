@@ -95,6 +95,10 @@ env = pogema_v0(GridConfig(integration="SampleFactory"))
 
 ### Classic Gym
 
+Pogema is fully capable for single-agent pathfinding tasks. 
+Example of training [stable-baselines3](https://github.com/DLR-RM/stable-baselines3) DQN to solve single-agent pathfinding tasks: [![Open In Colab](https://colab.research.google.com/drive/1vPwTd0PnzpWrB-bCHqoLSVwU9G9Lgcmv?usp=sharing)](https://colab.research.google.com/drive/19dSEGTQeM3oVJtVjpC162t1XApmv6APc?usp=sharing) 
+
+
 
 ```python
 import gym
@@ -104,6 +108,7 @@ import pogema
 # other agents will take random actions.
 env = gym.make("Pogema-v0")
 ```
+
 
 
 ## Customization
