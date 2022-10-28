@@ -135,6 +135,12 @@ def test_non_disappearing_pogema():
     run_episode(env=env)
 
 
+def test_non_disappearing_pogema_no_seed():
+    env = pogema_v0(GridConfig(num_agents=2, size=6, obs_radius=2, density=0.3, seed=None, on_target='nothing'))
+    env.reset()
+    run_episode(env=env)
+
+
 def test_non_disappearing_pogema_animation():
     env = pogema_v0(GridConfig(num_agents=2, size=6, obs_radius=2, density=0.3, seed=42, on_target='nothing'))
     env = AnimationMonitor(env)
@@ -144,6 +150,12 @@ def test_non_disappearing_pogema_animation():
 
 def test_life_long_pogema():
     env = pogema_v0(GridConfig(num_agents=2, size=6, obs_radius=2, density=0.3, seed=42, on_target='restart'))
+    env.reset()
+    run_episode(env=env)
+
+
+def test_life_long_pogema_empty_seed():
+    env = pogema_v0(GridConfig(num_agents=2, size=6, obs_radius=2, density=0.3, seed=None, on_target='restart'))
     env.reset()
     run_episode(env=env)
 

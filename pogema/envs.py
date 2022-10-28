@@ -253,8 +253,11 @@ class Pogema(PogemaBase):
 class PogemaLifeLong(Pogema):
     def __init__(self, grid_config=GridConfig(num_agents=2)):
         super().__init__(grid_config)
-        self.random_generators: list = [np.random.default_rng(grid_config.seed + i) for i in
-                                        range(grid_config.num_agents)]
+        if grid_config.seed is not None:
+            self.random_generators: list = [np.random.default_rng(grid_config.seed + i) for i in
+                                            range(grid_config.num_agents)]
+        else:
+            self.random_generators: list = [np.random.default_rng() for _ in range(grid_config.num_agents)]
 
     def _initialize_grid(self):
         self.grid: GridLifeLong = GridLifeLong(grid_config=self.grid_config)
