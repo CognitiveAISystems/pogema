@@ -173,7 +173,10 @@ class AnimationMonitor(gym.Wrapper):
         """
         obs, reward, dones, info = self.env.step(action)
 
-        if isinstance(dones, (list, tuple)) and all(dones) or dones:
+        multi_agent_done = isinstance(dones, (list, tuple)) and all(dones)
+        single_agent_done = isinstance(dones, (bool, int)) and dones
+
+        if multi_agent_done or single_agent_done:
             save_tau = self.animation_config.save_every_idx_episode
             if save_tau:
                 if (self._episode_idx + 1) % save_tau or save_tau == 1:
