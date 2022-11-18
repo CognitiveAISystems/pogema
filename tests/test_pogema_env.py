@@ -186,7 +186,7 @@ def test_predefined_configurations():
         gc = make_grid_config_func(seed=42)
         for difficulty, agent_density in zip(['Easy', 'Normal', 'Hard', 'ExtraHard'],
                                              [0.02232142, 0.04464285, 0.08928571, 0.17857142]):
-            if re.match(f'^{difficulty}\d+x\d+', make_grid_config_func.__name__):
+            if re.match(rf'^{difficulty}\d+x\d+', make_grid_config_func.__name__):
                 assert np.isclose(get_target_density_by_num_agents(gc.size, gc.num_agents, gc.density), agent_density)
 
     # checking creation

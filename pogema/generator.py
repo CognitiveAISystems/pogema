@@ -12,75 +12,6 @@ def generate_obstacles(grid_config: GridConfig, rnd=None):
     return rnd.binomial(1, grid_config.density, (grid_config.size, grid_config.size))
 
 
-def generate_positions_and_targets(obstacles, grid_config: GridConfig):
-    c = grid_config
-    grid = obstacles.copy()
-    q = []
-    # pick free id
-    current_id = max(int(c.FREE), int(c.OBSTACLE)) + 1
-
-    for x in range(c.size):
-        for y in range(c.size):
-            if grid[x, y] != c.FREE:
-                continue
-
-            grid[x, y] = current_id
-            q.append((x, y))
-
-            while len(q):
-                cx, cy = q.pop(0)
-
-                for dx, dy in c.MOVES:
-                    nx, ny = cx + dx, cy + dy
-                    if 0 <= nx < c.size and 0 <= ny < c.size:
-                        if grid[nx, ny] == c.FREE:
-                            grid[nx, ny] = current_id
-                            q.append((nx, ny))
-
-            current_id += 1
-    xy_to_id = dict()
-    id_to_xy = defaultdict(set)
-    for x in range(len(grid)):
-        for y in range(len(grid[x])):
-            if grid[x, y] != c.OBSTACLE:
-                xy_to_id[x, y] = grid[x, y]
-                id_to_xy[grid[x, y]].add((x, y))
-    order = list(xy_to_id.keys())
-    np.random.default_rng(c.seed).shuffle(order)
-
-    requests = defaultdict(set)
-    done_requests = 0
-    positions_xy = []
-    finishes_xy = [(-1, -1) for _ in range(c.num_agents)]
-    for x, y in order:
-        if (x, y) not in xy_to_id:
-            continue
-
-        # remove cell
-        id_ = xy_to_id.pop((x, y))
-        id_to_xy[id_].remove((x, y))
-
-        # deal with requests first
-        if requests[id_]:
-            finishes_xy[requests[id_].pop()] = x, y
-            done_requests += 1
-            continue
-
-        # no empty space so skip
-        if not len(id_to_xy[id_]):
-            continue
-
-        if len(positions_xy) >= c.num_agents:
-            if done_requests >= c.num_agents:
-                break
-            continue
-
-        # add start position and request finish for it
-        requests[id_].add(len(positions_xy))
-        positions_xy.append((x, y))
-    return positions_xy, finishes_xy
-
-
 def bfs(grid, moves, size, start_id, free_cell):
     q = []
     current_id = start_id
@@ -188,7 +119,6 @@ def generate_positions_and_targets_fast(obstacles, grid_config):
 
 
 def generate_new_target(rnd_generator, point_to_component, component_to_points, position):
-
     component_id = point_to_component[position]
     component = component_to_points[component_id]
     new_target = tuple(*rnd_generator.choice(component, 1))
@@ -201,7 +131,7 @@ def get_components(grid_config, obstacles, positions_xy, target_xy):
     grid = obstacles.copy()
 
     start_id = max(c.FREE, c.OBSTACLE) + 1
-    components = bfs(grid, tuple(c.MOVES), c.size, start_id, free_cell=c.FREE)
+    bfs(grid, tuple(c.MOVES), c.size, start_id, free_cell=c.FREE)
     height, width = obstacles.shape
 
     comp_to_points = defaultdict(list)
@@ -228,10 +158,8 @@ def time_it(func, num_iterations):
 
 def main():
     num_iterations = 1000
-    time_it(generate_positions_and_targets, num_iterations=1)
     time_it(generate_positions_and_targets_fast, num_iterations=1)
     print('fast:', time_it(generate_positions_and_targets_fast, num_iterations=num_iterations))
-    print('slow:', time_it(generate_positions_and_targets, num_iterations=num_iterations))
 
 
 if __name__ == '__main__':

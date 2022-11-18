@@ -97,7 +97,8 @@ def test_single_agent_gym_integration():
 
 
 def test_petting_zoo():
-    from pettingzoo.test import api_test, parallel_api_test, render_test
+    from pettingzoo.test import api_test, parallel_api_test
+    # from pettingzoo.test import render_test
 
     gc = GridConfig(num_agents=16, size=16, integration='PettingZoo')
 

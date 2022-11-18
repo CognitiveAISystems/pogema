@@ -21,71 +21,74 @@ class Grid:
         self.rnd = np.random.default_rng(grid_config.seed)
 
         if self.config.map is None:
-            obstacles = generate_obstacles(self.config)
+            self.obstacles = generate_obstacles(self.config)
         else:
-            obstacles = np.array([np.array(line) for line in self.config.map])
-        obstacles = obstacles.astype(np.int32)
+            self.obstacles = np.array([np.array(line) for line in self.config.map])
+        self.obstacles = self.obstacles.astype(np.int32)
 
         if grid_config.targets_xy and grid_config.agents_xy:
-            starts_xy, finishes_xy = grid_config.agents_xy, grid_config.targets_xy
-            if len(starts_xy) != len(finishes_xy):
+            self.starts_xy, self.finishes_xy = grid_config.agents_xy, grid_config.targets_xy
+            if len(self.starts_xy) != len(self.finishes_xy):
                 raise IndexError("Can't create task. Please provide agents_xy and targets_xy of the same size.")
-            grid_config.num_agents = len(starts_xy)
-            for start_xy, finish_xy in zip(starts_xy, finishes_xy):
+            grid_config.num_agents = len(self.starts_xy)
+            for start_xy, finish_xy in zip(self.starts_xy, self.finishes_xy):
                 s_x, s_y = start_xy
                 f_x, f_y = finish_xy
-                if self.config.map is not None and obstacles[s_x, s_y] == grid_config.OBSTACLE:
+                if self.config.map is not None and self.obstacles[s_x, s_y] == grid_config.OBSTACLE:
                     warnings.warn(f"There is an obstacle on a start point ({s_x}, {s_y}), replacing with free cell",
                                   Warning, stacklevel=2)
-                obstacles[s_x, s_y] = grid_config.FREE
-                if self.config.map is not None and obstacles[f_x, f_y] == grid_config.OBSTACLE:
+                self.obstacles[s_x, s_y] = grid_config.FREE
+                if self.config.map is not None and self.obstacles[f_x, f_y] == grid_config.OBSTACLE:
                     warnings.warn(f"There is an obstacle on a finish point ({s_x}, {s_y}), replacing with free cell",
                                   Warning, stacklevel=2)
-                obstacles[f_x, f_y] = grid_config.FREE
+                self.obstacles[f_x, f_y] = grid_config.FREE
         else:
-            starts_xy, finishes_xy = generate_positions_and_targets_fast(obstacles, self.config)
+            self.starts_xy, self.finishes_xy = generate_positions_and_targets_fast(self.obstacles, self.config)
 
-        if len(starts_xy) != len(finishes_xy):
+        if len(self.starts_xy) != len(self.finishes_xy):
             for attempt in range(num_retries):
-                if len(starts_xy) == len(finishes_xy):
+                if len(self.starts_xy) == len(self.finishes_xy):
                     warnings.warn(f'Created valid configuration only with {attempt} attempts.', Warning, stacklevel=2)
                     break
                 if self.config.map is None:
-                    obstacles = generate_obstacles(self.config)
-                starts_xy, finishes_xy = generate_positions_and_targets_fast(obstacles, self.config)
+                    self.obstacles = generate_obstacles(self.config)
+                self.starts_xy, self.finishes_xy = generate_positions_and_targets_fast(self.obstacles, self.config)
 
-        if not starts_xy or not finishes_xy or len(starts_xy) != len(finishes_xy):
-            raise OverflowError("Can't create task. Please check grid grid_config, especially density, num_agent and map.")
+        if not self.starts_xy or not self.finishes_xy or len(self.starts_xy) != len(self.finishes_xy):
+            raise OverflowError(
+                "Can't create task. Please check grid grid_config, especially density, num_agent and map.")
 
         if add_artificial_border:
-            r = self.config.obs_radius
-            if grid_config.empty_outside:
-                filled_obstacles = np.zeros(np.array(obstacles.shape) + r * 2)
-            else:
-                filled_obstacles = self.rnd.binomial(1, grid_config.density, np.array(obstacles.shape) + r * 2)
+            self.add_artificial_border()
 
-            height, width = filled_obstacles.shape
-            filled_obstacles[r - 1, r - 1:width - r + 1] = grid_config.OBSTACLE
-            filled_obstacles[r - 1:height - r + 1, r - 1] = grid_config.OBSTACLE
-            filled_obstacles[height - r, r - 1:width - r + 1] = grid_config.OBSTACLE
-            filled_obstacles[r - 1:height - r + 1, width - r] = grid_config.OBSTACLE
-            filled_obstacles[r:height - r, r:width - r] = obstacles
-
-            obstacles = filled_obstacles
-
-            starts_xy = [(x + r, y + r) for x, y in starts_xy]
-            finishes_xy = [(x + r, y + r) for x, y in finishes_xy]
-
-        filled_positions = np.zeros(obstacles.shape)
-        for x, y in starts_xy:
+        filled_positions = np.zeros(self.obstacles.shape)
+        for x, y in self.starts_xy:
             filled_positions[x, y] = 1
 
-        self.obstacles = obstacles
         self.positions = filled_positions
-        self.finishes_xy = finishes_xy
-        self.positions_xy = starts_xy
-        self._initial_xy = deepcopy(starts_xy)
+        self.positions_xy = self.starts_xy
+        self._initial_xy = deepcopy(self.starts_xy)
         self.is_active = {agent_id: True for agent_id in range(self.config.num_agents)}
+
+    def add_artificial_border(self):
+        gc = self.config
+        r = gc.obs_radius
+        if gc.empty_outside:
+            filled_obstacles = np.zeros(np.array(self.obstacles.shape) + r * 2)
+        else:
+            filled_obstacles = self.rnd.binomial(1, gc.density, np.array(self.obstacles.shape) + r * 2)
+
+        height, width = filled_obstacles.shape
+        filled_obstacles[r - 1, r - 1:width - r + 1] = gc.OBSTACLE
+        filled_obstacles[r - 1:height - r + 1, r - 1] = gc.OBSTACLE
+        filled_obstacles[height - r, r - 1:width - r + 1] = gc.OBSTACLE
+        filled_obstacles[r - 1:height - r + 1, width - r] = gc.OBSTACLE
+        filled_obstacles[r:height - r, r:width - r] = self.obstacles
+
+        self.obstacles = filled_obstacles
+
+        self.starts_xy = [(x + r, y + r) for x, y in self.starts_xy]
+        self.finishes_xy = [(x + r, y + r) for x, y in self.finishes_xy]
 
     def get_obstacles(self, ignore_borders=False):
         gc = self.config
