@@ -41,6 +41,26 @@ class LifeLongAverageThroughputMetric(AbstractMetric):
             return result
 
 
+class LifeLongAttritionMetric(AbstractMetric):
+
+    def __init__(self, env):
+        super().__init__(env)
+        self._attrition_steps = 0
+        self._on_goal_steps = 0
+
+    def _compute_stats(self, step, is_on_goal, truncated):
+        for agent_idx, on_goal in enumerate(is_on_goal):
+            if not on_goal:
+                self._attrition_steps += 1
+            else:
+                self._on_goal_steps += 1
+        if truncated:
+            result = {
+                'attrition': self._attrition_steps / max(1, self._on_goal_steps)}
+            self._solved_instances = 0
+            return result
+
+
 class NonDisappearCSRMetric(AbstractMetric):
 
     def _compute_stats(self, step, is_on_goal, truncated):
