@@ -11,6 +11,7 @@ from io import StringIO
 from pogema.generator import generate_obstacles, generate_positions_and_targets_fast, \
     get_components, generate_new_target
 from .grid_config import GridConfig
+from .grid_registry import in_registry, get_grid
 
 
 class Grid:
@@ -24,6 +25,8 @@ class Grid:
             self.obstacles = generate_obstacles(self.config)
         else:
             self.obstacles = np.array([np.array(line) for line in self.config.map])
+        if in_registry(self.config.map_name):
+            self.obstacles = get_grid(self.config.map_name).get_obstacles()
         self.obstacles = self.obstacles.astype(np.int32)
 
         if grid_config.targets_xy and grid_config.agents_xy:
