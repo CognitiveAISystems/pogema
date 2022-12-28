@@ -45,7 +45,7 @@ class RegisteredGrid:
                 obstacles.append(row)
         return obstacles, agents, targets
 
-    def __init__(self, name: str, grid_str: str = None, agents_positions: list[int] = None, agents_targets: list[int] = None):
+    def __init__(self, name: str, grid_str: str = None, agents_positions: list = None, agents_targets: list = None):
         self.name = name
         self.grid_str = grid_str
         self.agents_positions = agents_positions
