@@ -1,6 +1,6 @@
 import numpy as np
 
-from pogema.utils import check_grid
+from pogema.utils import check_grid, render_grid
 
 GRID_STR_REGISTRY = {}
 
@@ -88,6 +88,8 @@ class RegisteredGrid:
     def get_targets_xy(self):
         return self.targets_xy
 
+    def render(self):
+        render_grid(obstacles=self.get_obstacles(), positions_xy=self.get_agents_xy(), targets_xy=self.get_targets_xy())
 
 def register_grid(rg: RegisteredGrid):
     if in_registry(rg.name):

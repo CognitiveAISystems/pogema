@@ -1,3 +1,13 @@
+import sys
+
+from pydantic import BaseModel
+
+if sys.version_info >= (3, 8):
+    from typing import Literal
+else:
+    from typing_extensions import Literal
+
+
 class AgentsTargetsSizeError(Exception):
     pass
 
@@ -27,3 +37,54 @@ def check_grid(obstacles, agents_xy, targets_xy):
             raise KeyError(f'Cell is {f_x, f_y} occupied by obstacle.')
 
     # todo check connectivity of starts and finishes
+
+
+def render_grid(obstacles, positions_xy=None, targets_xy=None, is_active=None, mode='human'):
+    if positions_xy is None:
+        positions_xy = []
+    if targets_xy is None:
+        targets_xy = []
+    if is_active is None:
+        if positions_xy:
+            is_active = [True] * len(positions_xy)
+        else:
+            is_active = []
+    from io import StringIO
+    import string
+    from gym import utils as gym_utils
+    from contextlib import closing
+
+    outfile = StringIO() if mode == 'ansi' else sys.stdout
+    chars = string.digits + string.ascii_letters + string.punctuation
+    positions_map = {(x, y): id_ for id_, (x, y) in enumerate(positions_xy) if is_active[id_]}
+    finishes_map = {(x, y): id_ for id_, (x, y) in enumerate(targets_xy) if is_active[id_]}
+    for line_index, line in enumerate(obstacles):
+        out = ''
+        for cell_index, cell in enumerate(line):
+            if cell == CommonSettings().FREE:
+                agent_id = positions_map.get((line_index, cell_index), None)
+                finish_id = finishes_map.get((line_index, cell_index), None)
+
+                if agent_id is not None:
+                    out += str(gym_utils.colorize(' ' + chars[agent_id % len(chars)] + ' ', color='red', bold=True,
+                                                  highlight=False))
+                elif finish_id is not None:
+                    out += str(
+                        gym_utils.colorize('|' + chars[finish_id % len(chars)] + '|', 'white', highlight=False))
+                else:
+                    out += str(gym_utils.colorize(str(' . '), 'white', highlight=False))
+            else:
+                out += str(gym_utils.colorize(str('   '), 'cyan', bold=False, highlight=True))
+        out += '\n'
+        outfile.write(out)
+
+    if mode != 'human':
+        with closing(outfile):
+            return outfile.getvalue()
+
+
+class CommonSettings(BaseModel):
+    MOVES: list = [[0, 0], [-1, 0], [1, 0], [0, -1], [0, 1], ]
+    FREE: Literal[0] = 0
+    OBSTACLE: Literal[1] = 1
+    empty_outside: bool = True

@@ -12,6 +12,7 @@ from pogema.generator import generate_obstacles, generate_positions_and_targets_
     get_components, generate_new_target
 from .grid_config import GridConfig
 from .grid_registry import in_registry, get_grid
+from .utils import render_grid
 
 
 class Grid:
@@ -210,33 +211,7 @@ class Grid:
         return result.astype(np.float32)
 
     def render(self, mode='human'):
-        outfile = StringIO() if mode == 'ansi' else sys.stdout
-        chars = string.digits + string.ascii_letters + string.punctuation
-        positions_map = {(x, y): id_ for id_, (x, y) in enumerate(self.positions_xy) if self.is_active[id_]}
-        finishes_map = {(x, y): id_ for id_, (x, y) in enumerate(self.finishes_xy) if self.is_active[id_]}
-        for line_index, line in enumerate(self.obstacles):
-            out = ''
-            for cell_index, cell in enumerate(line):
-                if cell == self.config.FREE:
-                    agent_id = positions_map.get((line_index, cell_index), None)
-                    finish_id = finishes_map.get((line_index, cell_index), None)
-
-                    if agent_id is not None:
-                        out += str(utils.colorize(' ' + chars[agent_id % len(chars)] + ' ', color='red', bold=True,
-                                                  highlight=False))
-                    elif finish_id is not None:
-                        out += str(
-                            utils.colorize('|' + chars[finish_id % len(chars)] + '|', 'white', highlight=False))
-                    else:
-                        out += str(utils.colorize(str(' . '), 'white', highlight=False))
-                else:
-                    out += str(utils.colorize(str('   '), 'cyan', bold=False, highlight=True))
-            out += '\n'
-            outfile.write(out)
-
-        if mode != 'human':
-            with closing(outfile):
-                return outfile.getvalue()
+        render_grid(self.obstacles, self.positions_xy, self.finishes_xy, self.is_active, mode=mode)
 
     def move_agent_to_cell(self, agent_id, x, y):
         if self.positions[self.positions_xy[agent_id]] == self.config.FREE:
