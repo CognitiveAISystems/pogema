@@ -257,6 +257,11 @@ class AnimationMonitor(gym.Wrapper):
         for agent_idx in range(self.grid_config.num_agents):
             decompressed_history[agent_idx].append(decompressed_history[agent_idx][-1])
 
+        # Change episode length for static environment
+        if anim_cfg.static:
+            episode_length = 1
+            decompressed_history = [[decompressed_history[idx][-1]] for idx in range(len(decompressed_history))]
+
         gh = GridHolder(width=len(grid.obstacles), height=len(grid.obstacles[0]),
                         obstacles=grid.obstacles,
                         colors=agents_colors,
@@ -619,6 +624,10 @@ class AnimationMonitor(gym.Wrapper):
 
             tx, ty = agent_states[0].get_target_xy()
             x, y = ty, gh.width - tx - 1
+
+            if not any([agent_state.is_active() for agent_state in gh.history[agent_idx]]):
+                continue
+
             circle_settings = {}
             circle_settings.update(cx=cfg.draw_start + x * cfg.scale_size,
                                    cy=cfg.draw_start + y * cfg.scale_size,
