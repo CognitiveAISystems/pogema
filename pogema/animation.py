@@ -247,7 +247,10 @@ class AnimationMonitor(gym.Wrapper):
 
         # Change episode length for egocentric environment
         if anim_cfg.egocentric_idx is not None:
-            episode_length = decompressed_history[anim_cfg.egocentric_idx][-1].step + 1
+            if decompressed_history[anim_cfg.egocentric_idx][-1].active:
+                episode_length = len(decompressed_history[anim_cfg.egocentric_idx])
+            else:
+                episode_length = decompressed_history[anim_cfg.egocentric_idx][-1].step + 1
             for agent_idx in range(self.grid_config.num_agents):
                 decompressed_history[agent_idx] = decompressed_history[agent_idx][:episode_length]
         else:
