@@ -276,8 +276,6 @@ class GridLifeLong(Grid):
                 warnings.warn(f"The start point ({position[0]}, {position[1]}) and the goal"
                               f" ({target[0]}, {target[1]}) are in different components. The goal is changed.",
                               Warning, stacklevel=2)
-                self.finishes_xy = generate_new_target(grid_config, self.point_to_component,
-                                                       self.component_to_points, position)
 
 
 class CooperativeGrid(Grid):
