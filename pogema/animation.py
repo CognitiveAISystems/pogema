@@ -50,6 +50,7 @@ class AnimationConfig(BaseModel):
     egocentric_idx: typing.Optional[int] = None
     uid: typing.Optional[str] = None
     save_every_idx_episode: typing.Optional[int] = 1
+    show_border: bool = True
 
 
 class GridHolder(BaseModel):
@@ -247,10 +248,7 @@ class AnimationMonitor(gym.Wrapper):
 
         # Change episode length for egocentric environment
         if anim_cfg.egocentric_idx is not None:
-            if decompressed_history[anim_cfg.egocentric_idx][-1].active:
-                episode_length = len(decompressed_history[anim_cfg.egocentric_idx])
-            else:
-                episode_length = decompressed_history[anim_cfg.egocentric_idx][-1].step + 1
+            episode_length = decompressed_history[anim_cfg.egocentric_idx][-1].step + 1
             for agent_idx in range(self.grid_config.num_agents):
                 decompressed_history[agent_idx] = decompressed_history[agent_idx][:episode_length]
         else:
@@ -523,9 +521,13 @@ class AnimationMonitor(gym.Wrapper):
         cfg = self.svg_settings
 
         result = []
+        r = self.grid_config.obs_radius
         for i in range(gh.height):
             for j in range(gh.width):
                 x, y = self.fix_point(i, j, gh.width)
+                if not animation_config.show_border:
+                    if i == r - 1 or j == r - 1 or j == gh.width - r or i == gh.height - r:
+                        continue
                 if gh.obstacles[x][y] != self.grid_config.FREE:
                     obs_settings = {}
                     obs_settings.update(x=cfg.draw_start + i * cfg.scale_size - cfg.r,
