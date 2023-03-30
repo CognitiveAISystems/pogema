@@ -100,6 +100,8 @@ class AStarAgent:
 
     def act(self, obs):
         xy, target_xy, obstacles, agents = obs['xy'], obs['target_xy'], obs['obstacles'], obs['agents']
+
+
         if self._saved_xy is not None and h(self._saved_xy, xy) > 1:
             raise IndexError("Agent moved more than 1 step. Please, call clear_state method before new episode.")
         if self._saved_xy is not None and h(self._saved_xy, xy) == 0 and xy != target_xy:

@@ -102,7 +102,7 @@ class DeterministicPolicy:
             goal_j += 1 if goal_j == self.obs_radius * 2 else 0
         return goal_i, goal_j
 
-    def act(self, obs, dones) -> list:
+    def act(self, obs) -> list:
         if self.agents is None:
             self.obs_radius = len(obs[0][0]) // 2
             self.agents = [AStar() for _ in range(len(obs))]  # create a planner for each of the agents
@@ -130,12 +130,10 @@ def run_policy(gc: GridConfig, save_animation=False):
         env = AnimationMonitor(env)
 
     while True:
-        obs = env.reset()
-        done = [False, ...]
-        info = None
-        while not all(done):
-            obs, reward, done, info = env.step(policy.act(obs, done))
-            if all(done):
+        obs, info = env.reset()
+        while True:
+            obs, reward, terminated, truncated, info = env.step(policy.act(obs))
+            if all(terminated) or all(truncated):
                 break
 
         yield info[0]['metrics']

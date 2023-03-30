@@ -1,15 +1,10 @@
-import string
-import sys
-from contextlib import closing
 from copy import deepcopy
 import warnings
 
 import numpy as np
-from gym import utils
-from io import StringIO
 
 from pogema.generator import generate_obstacles, generate_positions_and_targets_fast, \
-    get_components, generate_new_target
+    get_components
 from .grid_config import GridConfig
 from .grid_registry import in_registry, get_grid
 from .utils import render_grid

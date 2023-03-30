@@ -1,8 +1,8 @@
 from typing import Optional
 
 import numpy as np
-import gym
-from gym.error import ResetNeeded
+import gymnasium
+from gymnasium.error import ResetNeeded
 
 from pogema.grid import Grid, GridLifeLong, CooperativeGrid
 from pogema.grid_config import GridConfig
@@ -30,7 +30,7 @@ class ActionsSampler:
         return self._rnd.integers(self._num_actions, size=dim)
 
 
-class PogemaBase(gym.Env):
+class PogemaBase(gymnasium.Env):
     """
     Abstract class of the Pogema environment.
     """
@@ -47,7 +47,7 @@ class PogemaBase(gym.Env):
         self.grid: Grid = None
         self.grid_config = grid_config
 
-        self.action_space: gym.spaces.Discrete = gym.spaces.Discrete(len(self.grid_config.MOVES))
+        self.action_space: gymnasium.spaces.Discrete = gymnasium.spaces.Discrete(len(self.grid_config.MOVES))
         self._multi_action_sampler = ActionsSampler(self.action_space.n, seed=self.grid_config.seed)
 
     def _get_agents_obs(self, agent_id=0):
@@ -100,20 +100,20 @@ class Pogema(PogemaBase):
         self.was_on_goal = None
         full_size = self.grid_config.obs_radius * 2 + 1
         if self.grid_config.observation_type == 'default':
-            self.observation_space = gym.spaces.Box(-1.0, 1.0, shape=(3, full_size, full_size))
+            self.observation_space = gymnasium.spaces.Box(-1.0, 1.0, shape=(3, full_size, full_size))
         elif self.grid_config.observation_type == 'POMAPF':
-            self.observation_space: gym.spaces.Dict = gym.spaces.Dict(
-                obstacles=gym.spaces.Box(0.0, 1.0, shape=(full_size, full_size)),
-                agents=gym.spaces.Box(0.0, 1.0, shape=(full_size, full_size)),
-                xy=gym.spaces.Box(low=-1024, high=1024, shape=(2,), dtype=int),
-                target_xy=gym.spaces.Box(low=-1024, high=1024, shape=(2,), dtype=int),
+            self.observation_space: gymnasium.spaces.Dict = gymnasium.spaces.Dict(
+                obstacles=gymnasium.spaces.Box(0.0, 1.0, shape=(full_size, full_size)),
+                agents=gymnasium.spaces.Box(0.0, 1.0, shape=(full_size, full_size)),
+                xy=gymnasium.spaces.Box(low=-1024, high=1024, shape=(2,), dtype=int),
+                target_xy=gymnasium.spaces.Box(low=-1024, high=1024, shape=(2,), dtype=int),
             )
         elif self.grid_config.observation_type == 'MAPF':
-            self.observation_space: gym.spaces.Dict = gym.spaces.Dict(
-                obstacles=gym.spaces.Box(0.0, 1.0, shape=(full_size, full_size)),
-                agents=gym.spaces.Box(0.0, 1.0, shape=(full_size, full_size)),
-                xy=gym.spaces.Box(low=-1024, high=1024, shape=(2,), dtype=int),
-                target_xy=gym.spaces.Box(low=-1024, high=1024, shape=(2,), dtype=int),
+            self.observation_space: gymnasium.spaces.Dict = gymnasium.spaces.Dict(
+                obstacles=gymnasium.spaces.Box(0.0, 1.0, shape=(full_size, full_size)),
+                agents=gymnasium.spaces.Box(0.0, 1.0, shape=(full_size, full_size)),
+                xy=gymnasium.spaces.Box(low=-1024, high=1024, shape=(2,), dtype=int),
+                target_xy=gymnasium.spaces.Box(low=-1024, high=1024, shape=(2,), dtype=int),
                 # global_obstacles=None, # todo define shapes of global state variables
                 # global_xy=None,
                 # global_target_xy=None,
@@ -147,7 +147,8 @@ class Pogema(PogemaBase):
         infos = self._get_infos()
 
         observations = self._obs()
-        return observations, rewards, terminated, infos
+        truncated = [False] * self.grid_config.num_agents
+        return observations, rewards, terminated, truncated, infos
 
     def _initialize_grid(self):
         self.grid: Grid = Grid(grid_config=self.grid_config)
@@ -156,7 +157,7 @@ class Pogema(PogemaBase):
         self.was_on_goal = [self.grid.on_goal(agent_idx) and self.grid.is_active[agent_idx]
                             for agent_idx in range(self.grid_config.num_agents)]
 
-    def reset(self, seed: Optional[int] = None, return_info: bool = False, options: Optional[dict] = None, ):
+    def reset(self, seed: Optional[int] = None, return_info: bool = True, options: Optional[dict] = None, ):
         self._initialize_grid()
         self.update_was_on_goal()
 
@@ -268,8 +269,6 @@ class PogemaLifeLong(Pogema):
 
         infos = [dict() for _ in range(self.grid_config.num_agents)]
 
-        dones = [False] * self.grid_config.num_agents
-
         self.move_agents(action)
         self.update_was_on_goal()
 
@@ -290,7 +289,10 @@ class PogemaLifeLong(Pogema):
             infos[agent_idx]['is_active'] = self.grid.is_active[agent_idx]
 
         obs = self._obs()
-        return obs, rewards, dones, infos
+
+        terminated = [False] * self.grid_config.num_agents
+        truncated = [False] * self.grid_config.num_agents
+        return obs, rewards, terminated, truncated, infos
 
 
 class PogemaCoopFinish(Pogema):
@@ -304,7 +306,6 @@ class PogemaCoopFinish(Pogema):
 
     def step(self, action: list):
         assert len(action) == self.grid_config.num_agents
-        rewards = [0.0 for _ in range(self.grid_config.num_agents)]
 
         infos = [dict() for _ in range(self.grid_config.num_agents)]
 
@@ -317,16 +318,10 @@ class PogemaCoopFinish(Pogema):
 
         obs = self._obs()
 
-        dones = [is_task_solved] * self.grid_config.num_agents
-        return obs, rewards, dones, infos
-
-
-class CoopFinishRewardWrapper(gym.Wrapper):
-    def step(self, action):
-        observations, rewards, dones, infos = self.env.step(action)
-        truncated = all(dones)
-        rewards = [1.0 if on_goal and truncated else 0.0 for on_goal in self.was_on_goal]
-        return observations, rewards, dones, infos
+        terminated = [is_task_solved] * self.grid_config.num_agents
+        truncated = [False] * self.grid_config.num_agents
+        rewards = [1.0 if is_task_solved else 0.0 for _ in range(self.grid_config.num_agents)]
+        return obs, rewards, terminated, truncated, infos
 
 
 def _make_pogema(grid_config):
@@ -340,8 +335,6 @@ def _make_pogema(grid_config):
         raise KeyError(f'Unknown on_target option: {grid_config.on_target}')
 
     env = MultiTimeLimit(env, grid_config.max_episode_steps)
-    if env.grid_config.on_target == 'nothing':
-        env = CoopFinishRewardWrapper(env)
     if env.grid_config.persistent:
         env = PersistentWrapper(env)
     else:

@@ -43,15 +43,15 @@ def test_moving():
     env.step([ac.up, ac.noop])
     env.step([ac.right, ac.noop])
     env.step([ac.down, ac.noop])
-    obs, reward, done, infos = env.step([ac.right, ac.noop])
+    obs, reward, terminated, truncated, infos = env.step([ac.right, ac.noop])
 
     assert np.isclose([1.0, 0.0], reward).all()
-    assert np.isclose([True, False], done).all()
+    assert np.isclose([True, False], terminated).all()
 
 
 def test_types():
     env = pogema_v0(GridConfig(num_agents=2, size=6, obs_radius=2, density=0.3, seed=42))
-    obs = env.reset()
+    obs, info = env.reset()
     assert obs[0].dtype == np.float32
 
 
@@ -60,26 +60,27 @@ def run_episode(grid_config=None, env=None):
         env = pogema_v0(grid_config)
     env.reset()
 
-    obs, rewards, dones, infos = env.reset(), [None], [False], [None]
+    obs, rewards, terminated, truncated, infos = env.reset(), [None], [False], [False], [None]
 
-    results = [[obs, rewards, dones, infos]]
-    while not all(dones):
+    results = [[obs, rewards, terminated, truncated, infos]]
+    while True:
         results.append(env.step(env.sample_actions()))
-        dones = results[-1][-2]
-
+        terminated, truncated = results[-1][2], results[-1][3]
+        if all(terminated) or all(truncated):
+            break
     return results
 
 
 def test_metrics():
-    _, _, _, infos = run_episode(GridConfig(num_agents=2, seed=5, size=5, max_episode_steps=64))[-1]
+    *_, infos = run_episode(GridConfig(num_agents=2, seed=5, size=5, max_episode_steps=64))[-1]
     assert np.isclose(infos[0]['metrics']['CSR'], 0.0)
     assert np.isclose(infos[0]['metrics']['ISR'], 0.5)
 
-    _, _, _, infos = run_episode(GridConfig(num_agents=2, seed=5, size=5, max_episode_steps=512))[-1]
+    *_, infos = run_episode(GridConfig(num_agents=2, seed=5, size=5, max_episode_steps=512))[-1]
     assert np.isclose(infos[0]['metrics']['CSR'], 1.0)
     assert np.isclose(infos[0]['metrics']['ISR'], 1.0)
 
-    _, _, _, infos = run_episode(GridConfig(num_agents=5, seed=5, size=5, max_episode_steps=64))[-1]
+    *_, infos = run_episode(GridConfig(num_agents=5, seed=5, size=5, max_episode_steps=64))[-1]
     assert np.isclose(infos[0]['metrics']['CSR'], 0.0)
     assert np.isclose(infos[0]['metrics']['ISR'], 0.2)
 
@@ -93,7 +94,7 @@ def test_standard_pogema():
 def test_pomapf_observation():
     env = pogema_v0(GridConfig(num_agents=2, size=6, obs_radius=2, density=0.3, seed=42, on_target='finish',
                                observation_type='POMAPF'))
-    obs = env.reset()
+    obs, info = env.reset()
     assert 'agents' in obs[0]
     assert 'obstacles' in obs[0]
     assert 'xy' in obs[0]
@@ -104,7 +105,7 @@ def test_pomapf_observation():
 def test_mapf_observation():
     env = pogema_v0(GridConfig(num_agents=2, size=6, obs_radius=2, density=0.3, seed=42, on_target='finish',
                                observation_type='MAPF'))
-    obs = env.reset()
+    obs, info = env.reset()
     assert 'global_obstacles' in obs[0]
     assert 'global_xy' in obs[0]
     assert 'global_target_xy' in obs[0]
@@ -119,15 +120,16 @@ def test_standard_pogema_animation():
 
 
 def test_gym_pogema_animation():
-    import gym
-    env = gym.make('Pogema-v0',
+    import gymnasium
+    env = gymnasium.make('Pogema-v0',
                    grid_config=GridConfig(num_agents=2, size=6, obs_radius=2, density=0.3, seed=42, on_target='finish'))
     env = AnimationMonitor(env)
     env.reset()
     done = False
-    while not done:
-        _, _, done, _ = env.step(env.action_space.sample())
-
+    while True:
+        _, _, terminated, truncated, _ = env.step(env.action_space.sample())
+        if terminated or truncated:
+            break
 
 def test_non_disappearing_pogema():
     env = pogema_v0(GridConfig(num_agents=2, size=6, obs_radius=2, density=0.3, seed=42, on_target='nothing'))
@@ -213,15 +215,15 @@ def test_persistent_env(num_steps=100):
 
     first_run_observations = []
 
-    def state_repr(observations, rewards, dones, infos):
-        return np.concatenate([np.array(observations).flatten(), dones, np.array(rewards), ])
+    def state_repr(observations, rewards, terminates, truncates, infos):
+        return np.concatenate([np.array(observations).flatten(), terminates, truncates, np.array(rewards), ])
 
     for current_step in range(num_steps):
         actions = action_sampler.sample_actions(dim=env.get_num_agents())
-        obs, reward, done, info = env.step(actions)
+        obs, reward, terminated, truncated, info = env.step(actions)
 
-        first_run_observations.append(state_repr(obs, reward, done, info))
-        if all(done):
+        first_run_observations.append(state_repr(obs, reward, terminated, truncated, info))
+        if all(terminated) or all(truncated):
             break
 
     # resetting the environment to the initial state using backward steps
@@ -234,10 +236,10 @@ def test_persistent_env(num_steps=100):
     second_run_observations = []
     for current_step in range(num_steps):
         actions = action_sampler.sample_actions(dim=env.get_num_agents())
-        obs, reward, done, info = env.step(actions)
-        second_run_observations.append(state_repr(obs, reward, done, info))
+        obs, reward, terminated, truncated, info = env.step(actions)
+        second_run_observations.append(state_repr(obs, reward, terminated, truncated, info))
         assert np.isclose(first_run_observations[current_step], second_run_observations[current_step]).all()
-        if all(done):
+        if all(terminated) or all(truncated):
             break
     assert np.isclose(first_run_observations, second_run_observations).all()
 

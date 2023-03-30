@@ -91,6 +91,7 @@ class RegisteredGrid:
     def render(self):
         render_grid(obstacles=self.get_obstacles(), positions_xy=self.get_agents_xy(), targets_xy=self.get_targets_xy())
 
+
 def register_grid(rg: RegisteredGrid):
     if in_registry(rg.name):
         raise KeyError(f"Grid with name {rg.name} already registered")

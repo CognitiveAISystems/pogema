@@ -1,4 +1,4 @@
-import gym
+from gymnasium import Wrapper
 
 
 class AgentState:
@@ -27,7 +27,7 @@ class AgentState:
         return self.x == o.x and self.y == o.y and self.tx == o.tx and self.ty == o.ty and self.active == o.active
 
 
-class PersistentWrapper(gym.Wrapper):
+class PersistentWrapper(Wrapper):
     def __init__(self, env):
         super().__init__(env)
         self._step = None

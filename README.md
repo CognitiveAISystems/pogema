@@ -12,11 +12,9 @@
     
 </div> 
 
-Partially observable multi-agent pathfinding (PO-MAPF) is a challenging problem which fundamentally differs from regular MAPF, in which a central controller is assumed to construct a joint plan for all agents before they start execution. PO-MAPF is intrisically decentralized and decision making (e.g. planning) here is interleaved with the execution. At each time step an agent receives a (local) observation of the environment and decides which action to take. The ultimate goal for the agents is to reach their goals while avoiding collisions with each other and the static obstacles.
+Partially Observable Multi-Agent Pathfinding (PO-MAPF) is a challenging problem that fundamentally differs from regular MAPF. In regular MAPF, a central controller constructs a joint plan for all agents before they start execution. However, PO-MAPF is intrinsically decentralized, and decision-making, such as planning, is interleaved with execution. At each time step, an agent receives a local observation of the environment and decides which action to take. The ultimate goal for the agents is to reach their goals while avoiding collisions with each other and the static obstacles.
 
-POGEMA stands for Partially-Observable Grid Environment for Multiple Agents. This is a grid-based environment that was specifically designed to be flexible, tunable and scalable. It can be tailored to a variety of PO-MAPF settings. Currently the (somewhat) standard setting is supported: agents can move between the cardinally-adjacent cells of the grid, each action (move or wait) takes one time step. No information sharing between the agents is happening.
-
-POGEMA can generate random maps and start/goals locations for the agents. It also can take custom maps as the input.
+POGEMA stands for Partially-Observable Grid Environment for Multiple Agents. It is a grid-based environment that was specifically designed to be flexible, tunable, and scalable. It can be tailored to a variety of PO-MAPF settings. Currently, the somewhat standard setting is supported, in which agents can move between the cardinal-adjacent cells of the grid, and each action (move or wait) takes one time step. No information sharing occurs between the agents. POGEMA can generate random maps and start/goal locations for the agents. It also accepts custom maps as input.
 
 ## Installation
 
@@ -28,15 +26,18 @@ Just install from PyPI:
 
 ```python
 from pogema import pogema_v0, Hard8x8
+
 env = pogema_v0(grid_config=Hard8x8())
 
-obs = env.reset()
+obs, info = env.reset()
 
-done = [False, ...]
+while True:
+    # Using random policy to make actions
+    obs, reward, terminated, truncated, info = env.step(env.sample_actions())
+    env.render()
+    if all(terminated) or all(truncated):
+        break
 
-while not all(done):
-    # Use random policy to make actions
-    obs, reward, done, info = env.step([env.action_space.sample() for _ in range(len(obs))])
 ```
 
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/19dSEGTQeM3oVJtVjpC162t1XApmv6APc?usp=sharing) 
@@ -93,12 +94,12 @@ from pogema import pogema_v0, GridConfig
 env = pogema_v0(GridConfig(integration="SampleFactory"))
 ```
 
-### Classic Gym
+### Gymnasium
 
 Pogema is fully capable for single-agent pathfinding tasks. 
 
 ```python
-import gym
+import gymnasium as gym
 import pogema
 
 # This interface provides experience only for agent with id=0,

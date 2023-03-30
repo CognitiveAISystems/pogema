@@ -1,6 +1,6 @@
 from typing import Union, Optional
 
-import gym
+from gymnasium import Wrapper
 
 from pogema import GridConfig
 from pogema.envs import _make_pogema
@@ -22,15 +22,19 @@ def _make_py_marl_integration(grid_config, *_, **__):
     return PyMarlPogema(grid_config)
 
 
-class SingleAgentWrapper(gym.Wrapper):
+class SingleAgentWrapper(Wrapper):
 
     def step(self, action):
-        observations, rewards, dones, infos = self.env.step(
+        observations, rewards, terminated, truncated, infos = self.env.step(
             [action] + [self.env.action_space.sample() for _ in range(self.get_num_agents() - 1)])
-        return observations[0], rewards[0], dones[0], infos[0]
+        return observations[0], rewards[0], terminated[0], truncated[0], infos[0]
 
-    def reset(self, seed: Optional[int] = None, return_info: bool = False, options: Optional[dict] = None, ):
-        return self.env.reset()[0]
+    def reset(self, seed: Optional[int] = None, return_info: bool = True, options: Optional[dict] = None, ):
+        observations, infos = self.env.reset()
+        if return_info:
+            return observations[0], infos[0]
+        else:
+            return observations[0]
 
 
 def make_single_agent_gym(grid_config: Union[GridConfig, dict] = GridConfig()):

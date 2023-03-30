@@ -39,7 +39,7 @@ setup(
     long_description_content_type='text/markdown',
     url='https://github.com/AIRI-Institute/pogema',
     install_requires=[
-        "gym>=0.18.3,<=0.25.0",
+        "gymnasium==0.28.1",
         "numpy>=1.19.2,<=1.23.1",
         "pydantic>=1.8.2,<=1.9.1",
     ],
@@ -49,5 +49,5 @@ setup(
     package_dir={'': './'},
     packages=find_packages(where='./', include='pogema*'),
     include_package_data=True,
-    python_requires='>=3.6',
+    python_requires='>=3.7',
 )

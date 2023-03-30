@@ -12,7 +12,7 @@ class PyMarlPogema:
 
         self.env = _make_pogema(grid_config)
         self._mh_distance = mh_distance
-        self._observations = self.env.reset()
+        self._observations, _ = self.env.reset()
         self.max_episode_steps = gc.max_episode_steps
         self.episode_limit = gc.max_episode_steps
         self.n_agents = self.env.get_num_agents()
@@ -24,13 +24,14 @@ class PyMarlPogema:
         return self
 
     def step(self, actions):
-        self._observations, rewards, dones, infos = self.env.step(actions)
+        self._observations, rewards, terminated, truncated, infos = self.env.step(actions)
         info = {}
-        if all(dones):
+        done = all(terminated) or all(truncated)
+        if done:
             info.update(CSR=infos[0]['metrics']['CSR'])
             info.update(ISR=infos[0]['metrics']['ISR'])
 
-        return sum(rewards), all(dones), info
+        return sum(rewards), done, info
 
     def get_obs(self):
         return np.array([self.get_obs_agent(agent_id) for agent_id in range(self.n_agents)])
@@ -64,7 +65,7 @@ class PyMarlPogema:
 
     def reset(self):
         self._grid_config = self.env.grid_config
-        self._observations = self.env.reset()
+        self._observations, _ = self.env.reset()
         return np.array(self._observations).flatten()
 
     def save_replay(self):

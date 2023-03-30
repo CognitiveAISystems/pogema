@@ -1,8 +1,8 @@
-import gym
+from gymnasium import Wrapper
 
 
-class AbstractMetric(gym.Wrapper):
-    def _compute_stats(self, step, is_on_goal, truncated):
+class AbstractMetric(Wrapper):
+    def _compute_stats(self, step, is_on_goal, finished):
         raise NotImplementedError
 
     def __init__(self, env):
@@ -10,11 +10,12 @@ class AbstractMetric(gym.Wrapper):
         self._current_step = 0
 
     def step(self, action):
-        obs, reward, done, infos = self.env.step(action)
-        truncated = all(done)
-        metric = self._compute_stats(self._current_step, self.was_on_goal, all(done))
+        obs, reward, terminated, truncated, infos = self.env.step(action)
+        finished = all(truncated) or all(terminated)
+
+        metric = self._compute_stats(self._current_step, self.was_on_goal, finished)
         self._current_step += 1
-        if truncated:
+        if finished:
             self._current_step = 0
 
         if metric:
@@ -22,7 +23,7 @@ class AbstractMetric(gym.Wrapper):
                 infos[0]['metrics'] = {}
             infos[0]['metrics'].update(**metric)
 
-        return obs, reward, done, infos
+        return obs, reward, terminated, truncated, infos
 
 
 class LifeLongAverageThroughputMetric(AbstractMetric):
@@ -31,11 +32,11 @@ class LifeLongAverageThroughputMetric(AbstractMetric):
         super().__init__(env)
         self._solved_instances = 0
 
-    def _compute_stats(self, step, is_on_goal, truncated):
+    def _compute_stats(self, step, is_on_goal, finished):
         for agent_idx, on_goal in enumerate(is_on_goal):
             if on_goal:
                 self._solved_instances += 1
-        if truncated:
+        if finished:
             result = {'avg_throughput': self._solved_instances / self.grid_config.max_episode_steps}
             self._solved_instances = 0
             return result
@@ -48,13 +49,13 @@ class LifeLongAttritionMetric(AbstractMetric):
         self._attrition_steps = 0
         self._on_goal_steps = 0
 
-    def _compute_stats(self, step, is_on_goal, truncated):
+    def _compute_stats(self, step, is_on_goal, finished):
         for agent_idx, on_goal in enumerate(is_on_goal):
             if not on_goal:
                 self._attrition_steps += 1
             else:
                 self._on_goal_steps += 1
-        if truncated:
+        if finished:
             result = {
                 'attrition': self._attrition_steps / max(1, self._on_goal_steps)}
             self._solved_instances = 0
@@ -63,22 +64,22 @@ class LifeLongAttritionMetric(AbstractMetric):
 
 class NonDisappearCSRMetric(AbstractMetric):
 
-    def _compute_stats(self, step, is_on_goal, truncated):
-        if truncated:
+    def _compute_stats(self, step, is_on_goal, finished):
+        if finished:
             return {'CSR': float(all(is_on_goal))}
 
 
 class NonDisappearISRMetric(AbstractMetric):
 
-    def _compute_stats(self, step, is_on_goal, truncated):
-        if truncated:
+    def _compute_stats(self, step, is_on_goal, finished):
+        if finished:
             return {'ISR': float(sum(is_on_goal)) / self.get_num_agents()}
 
 
 class NonDisappearEpLengthMetric(AbstractMetric):
 
-    def _compute_stats(self, step, is_on_goal, truncated):
-        if truncated:
+    def _compute_stats(self, step, is_on_goal, finished):
+        if finished:
             return {'ep_length': step}
 
 
@@ -87,13 +88,13 @@ class EpLengthMetric(AbstractMetric):
         super().__init__(env)
         self._solve_time = [None for _ in range(self.get_num_agents())]
 
-    def _compute_stats(self, step, is_on_goal, truncated):
+    def _compute_stats(self, step, is_on_goal, finished):
         for idx, on_goal in enumerate(is_on_goal):
             if self._solve_time[idx] is None:
-                if on_goal or truncated:
+                if on_goal or finished:
                     self._solve_time[idx] = step
 
-        if truncated:
+        if finished:
             result = {'ep_length': sum(self._solve_time) / self.get_num_agents() + 1}
             self._solve_time = [None for _ in range(self.get_num_agents())]
             return result
@@ -104,9 +105,9 @@ class CSRMetric(AbstractMetric):
         super().__init__(env)
         self._solved_instances = 0
 
-    def _compute_stats(self, step, is_on_goal, truncated):
+    def _compute_stats(self, step, is_on_goal, finished):
         self._solved_instances += sum(is_on_goal)
-        if truncated:
+        if finished:
             results = {'CSR': float(self._solved_instances == self.get_num_agents())}
             self._solved_instances = 0
             return results
@@ -117,9 +118,9 @@ class ISRMetric(AbstractMetric):
         super().__init__(env)
         self._solved_instances = 0
 
-    def _compute_stats(self, step, is_on_goal, truncated):
+    def _compute_stats(self, step, is_on_goal, finished):
         self._solved_instances += sum(is_on_goal)
-        if truncated:
+        if finished:
             results = {'ISR': self._solved_instances / self.get_num_agents()}
             self._solved_instances = 0
             return results

@@ -51,7 +51,7 @@ def render_grid(obstacles, positions_xy=None, targets_xy=None, is_active=None, m
             is_active = []
     from io import StringIO
     import string
-    from gym import utils as gym_utils
+    from gymnasium import utils as gym_utils
     from contextlib import closing
 
     outfile = StringIO() if mode == 'ansi' else sys.stdout

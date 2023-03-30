@@ -7,9 +7,9 @@ from pogema.integrations.make_pogema import pogema_v0
 
 
 def test_gym_creation():
-    import gym
+    import gymnasium
 
-    env = gym.make("Pogema-v0", grid_config=GridConfig(integration='gym'))
+    env = gymnasium.make("Pogema-v0", grid_config=GridConfig(integration='gym'))
     env.reset()
 
 
@@ -30,8 +30,10 @@ def test_sample_factory_integration():
     for _ in range(2):
         dones = [False]
         infos = None
-        while not all(dones):
-            _, _, dones, infos = env.step(env.sample_actions())
+        while True:
+            _, _, terminated, truncated, infos = env.step(env.sample_actions())
+            if all(terminated) or all(truncated):
+                break
 
         assert np.isclose(infos[0]['episode_extra_stats']['ISR'], 0.0)
         assert np.isclose(infos[0]['episode_extra_stats']['CSR'], 0.0)
@@ -80,24 +82,26 @@ def test_single_agent_gym_integration():
     gc = GridConfig(seed=7, num_agents=1, integration='gym')
     env = pogema_v0(gc)
 
-    obs = env.reset()
+    obs, info = env.reset()
 
     assert obs.shape == env.observation_space.shape
     done = False
 
     cnt = 0
-    while not done:
+    while True:
         assert cnt < gc.max_episode_steps
-        obs, reward, done, info = env.step(env.action_space.sample())
+        obs, reward, terminated, truncated, info = env.step(env.action_space.sample())
         assert obs.shape == env.observation_space.shape
         assert isinstance(reward, float)
         assert isinstance(done, bool)
         assert isinstance(info, dict)
         cnt += 1
+        if terminated or truncated:
+            break
 
 
 def test_petting_zoo():
-    from pettingzoo.test import api_test, parallel_api_test
+    from pettingzoo.test import api_test, parallel_api_test, render_test
     # from pettingzoo.test import render_test
 
     gc = GridConfig(num_agents=16, size=16, integration='PettingZoo')
@@ -112,6 +116,6 @@ def test_petting_zoo():
 
         api_test(env(gc), num_cycles=1000, verbose_progress=True)
         # todo fix this
-        # render_test(env)
+        # render_test(lambda: pogema_v0(gc))
     except ImportError:
         pass

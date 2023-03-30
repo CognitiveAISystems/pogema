@@ -1,8 +1,7 @@
 import os
 import typing
 from itertools import cycle
-from gym import logger
-import gym
+from gymnasium import logger, Wrapper
 
 from pydantic import BaseModel
 
@@ -149,7 +148,7 @@ class Drawing:
         return "\n".join(results)
 
 
-class AnimationMonitor(gym.Wrapper):
+class AnimationMonitor(Wrapper):
     """
     Defines the animation, which saves the episode as SVG.
     """
@@ -172,12 +171,14 @@ class AnimationMonitor(gym.Wrapper):
         :param action: current actions
         :return: obs, reward, done, info
         """
-        obs, reward, dones, info = self.env.step(action)
+        obs, reward, terminated, truncated, info = self.env.step(action)
 
-        multi_agent_done = isinstance(dones, (list, tuple)) and all(dones)
-        single_agent_done = isinstance(dones, (bool, int)) and dones
+        multi_agent_terminated = isinstance(terminated, (list, tuple)) and all(terminated)
+        single_agent_terminated = isinstance(terminated, (bool, int)) and terminated
+        multi_agent_truncated = isinstance(truncated, (list, tuple)) and all(truncated)
+        single_agent_truncated = isinstance(truncated, (bool, int)) and truncated
 
-        if multi_agent_done or single_agent_done:
+        if multi_agent_terminated or single_agent_terminated or multi_agent_truncated or single_agent_truncated:
             save_tau = self.animation_config.save_every_idx_episode
             if save_tau:
                 if (self._episode_idx + 1) % save_tau or save_tau == 1:
@@ -189,7 +190,7 @@ class AnimationMonitor(gym.Wrapper):
                                         self.pick_name(self.grid_config, self._episode_idx))
                     self.save_animation(path)
 
-        return obs, reward, dones, info
+        return obs, reward, terminated, truncated, info
 
     @staticmethod
     def pick_name(grid_config: GridConfig, episode_idx=None, zfill_ep=5):
