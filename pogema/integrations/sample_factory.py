@@ -17,11 +17,11 @@ class IsMultiAgentWrapper(Wrapper):
 class MetricsForwardingWrapper(Wrapper):
     def step(self, action):
 
-        *first, infos = self.env.step(action)
+        observations, rewards, terminated, truncated, infos = self.env.step(action)
         for info in infos:
             if 'metrics' in info:
                 info.update(episode_extra_stats=deepcopy(info['metrics']))
-        return *first, infos
+        return observations, rewards, terminated, truncated, infos
 
 
 class AutoResetWrapper(Wrapper):
