@@ -18,7 +18,7 @@ class AnimationSettings(BaseModel):
     stroke_width: int = 10
     scale_size: int = 100
     time_scale: float = 0.28
-    draw_start: int = 50
+    draw_start: int = 100
     rx: int = 15
 
     obstacle_color: str = '#84A1AE'
@@ -50,6 +50,7 @@ class AnimationConfig(BaseModel):
     uid: typing.Optional[str] = None
     save_every_idx_episode: typing.Optional[int] = 1
     show_border: bool = True
+    show_lines: bool = False
 
 
 class GridHolder(BaseModel):
@@ -109,6 +110,18 @@ class Circle(SvgObject):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.attributes['cy'] = -self.attributes['cy']
+
+
+class Line(SvgObject):
+    """
+    Line class for the SVG.
+    """
+    tag = 'line'
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.attributes['y1'] = -self.attributes['y1']
+        self.attributes['y2'] = -self.attributes['y2']
 
 
 class Animation(SvgObject):
@@ -270,7 +283,8 @@ class AnimationMonitor(Wrapper):
                         episode_length=episode_length,
                         history=decompressed_history, )
 
-        render_width, render_height = gh.height * cfg.scale_size, gh.width * cfg.scale_size
+        render_width, render_height = gh.height * cfg.scale_size + cfg.scale_size, gh.width * cfg.scale_size + cfg.scale_size
+
         drawing = Drawing(width=render_width, height=render_height, display_inline=False, origin=(0, 0))
         obstacles = self.create_obstacles(gh, anim_cfg)
 
@@ -284,6 +298,12 @@ class AnimationMonitor(Wrapper):
             if not anim_cfg.static:
                 self.animate_agents(agents, anim_cfg.egocentric_idx, gh)
                 self.animate_targets(targets, gh, anim_cfg)
+        if anim_cfg.show_lines:
+            grid_lines = self.create_grid_lines(gh, anim_cfg, render_width, render_height)
+            for line in grid_lines:
+                drawing.add_element(line)
+        for obj in [*obstacles, *agents, *targets, ]:
+            drawing.add_element(obj)
 
         if anim_cfg.egocentric_idx is not None:
             field_of_view = self.create_field_of_view(grid_holder=gh, animation_config=anim_cfg)
@@ -292,10 +312,39 @@ class AnimationMonitor(Wrapper):
                 self.animate_field_of_view(field_of_view, anim_cfg.egocentric_idx, gh)
             drawing.add_element(field_of_view)
 
-        for obj in [*obstacles, *agents, *targets]:
-            drawing.add_element(obj)
-
         return drawing
+
+    def create_grid_lines(self, grid_holder: GridHolder, animation_config: AnimationConfig, render_width,
+                          render_height):
+        """
+        Creates the grid lines.
+        :param grid_holder: grid holder
+        :param animation_config: animation configuration
+        :return: grid_lines: list of grid lines
+        """
+        cfg = self.svg_settings
+        grid_lines = []
+        for i in range(-1, grid_holder.height + 1):
+            # vertical lines
+            x0 = x1 = i * cfg.scale_size + cfg.scale_size / 2
+            y0 = 0
+            y1 = render_height
+            grid_lines.append(
+                Line(x1=x0, y1=y0, x2=x1, y2=y1, stroke=cfg.obstacle_color, stroke_width=cfg.stroke_width // 1.5))
+        for i in range(-1, grid_holder.height + 1):
+            # continue
+            # horizontal lines
+            x0 = 0
+            y0 = y1 = i * cfg.scale_size + cfg.scale_size / 2
+            x1 = render_width
+            grid_lines.append(
+                Line(x1=x0, y1=y0, x2=x1, y2=y1, stroke=cfg.obstacle_color, stroke_width=cfg.stroke_width // 1.5))
+
+        # for i in range(grid_holder.width):
+        #     grid_lines.append(Line(start=(0, i * cfg.scale_size),
+        #                            end=(grid_holder.height * cfg.scale_size, i * cfg.scale_size),
+        #                            stroke=cfg.grid_color, stroke_width=cfg.grid_width))
+        return grid_lines
 
     def save_animation(self, name='render.svg', animation_config: typing.Optional[AnimationConfig] = None):
         """
