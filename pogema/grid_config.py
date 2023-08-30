@@ -4,10 +4,7 @@ from pydantic import BaseModel, validator
 
 from pogema.utils import CommonSettings
 
-if sys.version_info >= (3, 8):
-    from typing import Literal
-else:
-    from typing_extensions import Literal
+from typing_extensions import Literal
 
 
 class GridConfig(CommonSettings, ):

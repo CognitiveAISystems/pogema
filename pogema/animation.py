@@ -331,7 +331,7 @@ class AnimationMonitor(Wrapper):
             y1 = render_height
             grid_lines.append(
                 Line(x1=x0, y1=y0, x2=x1, y2=y1, stroke=cfg.obstacle_color, stroke_width=cfg.stroke_width // 1.5))
-        for i in range(-1, grid_holder.height + 1):
+        for i in range(-1, grid_holder.width + 1):
             # continue
             # horizontal lines
             x0 = 0
