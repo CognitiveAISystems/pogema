@@ -217,19 +217,26 @@ class Grid:
         self.positions_xy[agent_id] = x, y
         self.positions[self.positions_xy[agent_id]] = self.config.OBSTACLE
 
+    def has_obstacle(self, x, y):
+        return self.obstacles[x, y] == self.config.OBSTACLE
+
+    def move_without_checks(self, agent_id, action):
+        x, y = self.positions_xy[agent_id]
+        dx, dy = self.config.MOVES[action]
+        self.positions[x, y] = self.config.FREE
+        self.positions[x+dx, y+dy] = self.config.OBSTACLE
+        self.positions_xy[agent_id] = (x+dx, y+dy)
+
     def move(self, agent_id, action):
         x, y = self.positions_xy[agent_id]
-
-        self.positions[x, y] = self.config.FREE
-
         dx, dy = self.config.MOVES[action]
-
-        if self.obstacles[x + dx, y + dy] == self.config.FREE and self.positions[x + dx, y + dy] == self.config.FREE:
-            x += dx
-            y += dy
-
+        if self.obstacles[x + dx, y + dy] == self.config.FREE:
+            if self.positions[x + dx, y + dy] == self.config.FREE:
+                self.positions[x, y] = self.config.FREE
+                x += dx
+                y += dy
+                self.positions[x, y] = self.config.OBSTACLE
         self.positions_xy[agent_id] = (x, y)
-        self.positions[x, y] = self.config.OBSTACLE
 
     def on_goal(self, agent_id):
         return self.positions_xy[agent_id] == self.finishes_xy[agent_id]
@@ -271,19 +278,3 @@ class GridLifeLong(Grid):
                 warnings.warn(f"The start point ({position[0]}, {position[1]}) and the goal"
                               f" ({target[0]}, {target[1]}) are in different components. The goal is changed.",
                               Warning, stacklevel=2)
-
-
-class CooperativeGrid(Grid):
-    def __init__(self, grid_config: GridConfig, add_artificial_border: bool = True, num_retries=10):
-        super().__init__(grid_config, add_artificial_border, num_retries)
-
-    def move(self, agent_id, action):
-        x, y = self.positions_xy[agent_id]
-        dx, dy = self.config.MOVES[action]
-        if self.obstacles[x + dx, y + dy] == self.config.FREE:
-            if self.positions[x + dx, y + dy] == self.config.FREE:
-                self.positions[x, y] = self.config.FREE
-                x += dx
-                y += dy
-                self.positions[x, y] = self.config.OBSTACLE
-        self.positions_xy[agent_id] = (x, y)

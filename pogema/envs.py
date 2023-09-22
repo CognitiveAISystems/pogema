@@ -4,7 +4,7 @@ import numpy as np
 import gymnasium
 from gymnasium.error import ResetNeeded
 
-from pogema.grid import Grid, GridLifeLong, CooperativeGrid
+from pogema.grid import Grid, GridLifeLong
 from pogema.grid_config import GridConfig
 from pogema.wrappers.metrics import LifeLongAverageThroughputMetric, NonDisappearEpLengthMetric, \
     NonDisappearCSRMetric, NonDisappearISRMetric, EpLengthMetric, ISRMetric, CSRMetric
@@ -210,6 +210,17 @@ class Pogema(PogemaBase):
             infos[agent_idx]['is_active'] = self.grid.is_active[agent_idx]
         return infos
 
+    def _revert_action(self, agent_idx, used_cells, cell, actions):
+        actions[agent_idx] = 0
+        used_cells[cell].remove(agent_idx)
+        new_cell = self.grid.positions_xy[agent_idx]
+        if new_cell in used_cells and len(used_cells[new_cell]) > 0:
+            used_cells[new_cell].append(agent_idx)
+            return self._revert_action(used_cells[new_cell][0], used_cells, new_cell, actions)
+        else:
+            used_cells.setdefault(new_cell, []).append(agent_idx)
+        return actions, used_cells
+
     def move_agents(self, actions):
         if self.grid.config.collision_system == 'priority':
             for agent_idx in range(self.grid_config.num_agents):
@@ -229,6 +240,33 @@ class Pogema(PogemaBase):
                     dx, dy = self.grid_config.MOVES[actions[agent_idx]]
                     if used_cells.get((x + dx, y + dy), None) != 'blocked':
                         self.grid.move(agent_idx, actions[agent_idx])
+        elif self.grid.config.collision_system == 'soft':
+            used_cells = dict()
+            used_edges = dict()
+            agents_xy = self.grid.get_agents_xy()
+            for agent_idx, (x, y) in enumerate(agents_xy):
+                if self.grid.is_active[agent_idx]:
+                    dx, dy = self.grid.config.MOVES[actions[agent_idx]]
+                    used_cells.setdefault((x + dx, y + dy), []).append(agent_idx)
+                    used_edges[x, y, x + dx, y + dy] = [agent_idx]
+                    if dx != 0 or dy != 0:
+                        used_edges.setdefault((x + dx, y + dy, x, y), []).append(agent_idx)
+            for agent_idx, (x, y) in enumerate(agents_xy):
+                if self.grid.is_active[agent_idx]:
+                    dx, dy = self.grid.config.MOVES[actions[agent_idx]]
+                    if len(used_edges[x, y, x + dx, y + dy]) > 1:
+                        used_cells[x + dx, y + dy].remove(agent_idx)
+                        used_cells.setdefault((x, y), []).append(agent_idx)
+                        actions[agent_idx] = 0
+            for agent_idx in reversed(range(len(agents_xy))):
+                x, y = agents_xy[agent_idx]
+                if self.grid.is_active[agent_idx]:
+                    dx, dy = self.grid.config.MOVES[actions[agent_idx]]
+                    if len(used_cells[x + dx, y + dy]) > 1 or self.grid.has_obstacle(x + dx, y + dy):
+                        actions, used_cells = self._revert_action(agent_idx, used_cells, (x + dx, y + dy), actions)
+            for agent_idx in range(self.grid_config.num_agents):
+                if self.grid.is_active[agent_idx]:
+                    self.grid.move_without_checks(agent_idx, actions[agent_idx])
         else:
             raise ValueError('Unknown collision system: {}'.format(self.grid.config.collision_system))
 
@@ -301,7 +339,7 @@ class PogemaCoopFinish(Pogema):
         self.is_multiagent = True
 
     def _initialize_grid(self):
-        self.grid: CooperativeGrid = CooperativeGrid(grid_config=self.grid_config)
+        self.grid: Grid = Grid(grid_config=self.grid_config)
 
     def step(self, action: list):
         assert len(action) == self.grid_config.num_agents
