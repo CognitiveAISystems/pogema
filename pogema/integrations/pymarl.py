@@ -28,9 +28,9 @@ class PyMarlPogema:
         info = {}
         done = all(terminated) or all(truncated)
         if done:
-            info.update(CSR=infos[0]['metrics']['CSR'])
-            info.update(ISR=infos[0]['metrics']['ISR'])
-
+            for key, value in infos[0]['metrics'].items():
+                info[key] = value
+            
         return sum(rewards), done, info
 
     def get_obs(self):
