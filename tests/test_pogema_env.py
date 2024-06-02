@@ -4,13 +4,12 @@ import time
 import numpy as np
 from tabulate import tabulate
 
-from pogema import pogema_v0
+from pogema import pogema_v0, AnimationMonitor
 from pogema import Easy8x8, Normal8x8, Hard8x8, ExtraHard8x8
 from pogema import Easy16x16, Normal16x16, Hard16x16, ExtraHard16x16
 from pogema import Easy32x32, Normal32x32, Hard32x32, ExtraHard32x32
 from pogema import Easy64x64, Normal64x64, Hard64x64, ExtraHard64x64
 
-from pogema.animation import AnimationMonitor
 from pogema.envs import ActionsSampler
 from pogema.grid import GridConfig
 
@@ -122,7 +121,8 @@ def test_standard_pogema_animation():
 def test_gym_pogema_animation():
     import gymnasium
     env = gymnasium.make('Pogema-v0',
-                   grid_config=GridConfig(num_agents=2, size=6, obs_radius=2, density=0.3, seed=42, on_target='finish'))
+                         grid_config=GridConfig(num_agents=2, size=6, obs_radius=2, density=0.3, seed=42,
+                                                on_target='finish'))
     env = AnimationMonitor(env)
     env.reset()
     done = False
@@ -130,6 +130,7 @@ def test_gym_pogema_animation():
         _, _, terminated, truncated, _ = env.step(env.action_space.sample())
         if terminated or truncated:
             break
+
 
 def test_non_disappearing_pogema():
     env = pogema_v0(GridConfig(num_agents=2, size=6, obs_radius=2, density=0.3, seed=42, on_target='nothing'))

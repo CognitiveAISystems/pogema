@@ -1,7 +1,8 @@
 import numpy as np
 from heapq import heappop, heappush
-from pogema import GridConfig, pogema_v0
-from pogema.animation import AnimationMonitor
+from pogema import GridConfig, pogema_v0, AnimationMonitor
+
+# from pogema.animation import AnimationMonitor
 
 INF = 1000000007
 

@@ -26,12 +26,16 @@ class AgentState:
         o = other
         return self.x == o.x and self.y == o.y and self.tx == o.tx and self.ty == o.ty and self.active == o.active
 
+    def __str__(self):
+        return str([self.x, self.y, self.tx, self.ty, self.step, self.active])
+
 
 class PersistentWrapper(Wrapper):
-    def __init__(self, env):
+    def __init__(self, env, xy_offset=None):
         super().__init__(env)
         self._step = None
         self._agent_states = None
+        self._xy_offset = xy_offset
 
     def step(self, action):
         result = self.env.step(action)
@@ -67,6 +71,11 @@ class PersistentWrapper(Wrapper):
         x, y = grid.positions_xy[agent_idx]
         tx, ty = grid.finishes_xy[agent_idx]
         active = grid.is_active[agent_idx]
+        if self._xy_offset:
+            x += self._xy_offset
+            y += self._xy_offset
+            tx += self._xy_offset
+            ty += self._xy_offset
         return AgentState(x, y, tx, ty, self._step, active)
 
     def reset(self, **kwargs):
