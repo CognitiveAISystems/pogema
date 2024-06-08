@@ -7,9 +7,9 @@ from gymnasium.error import ResetNeeded
 from pogema.grid import Grid, GridLifeLong
 from pogema.grid_config import GridConfig
 from pogema.wrappers.metrics import LifeLongAverageThroughputMetric, NonDisappearEpLengthMetric, \
-    NonDisappearCSRMetric, NonDisappearISRMetric, EpLengthMetric, ISRMetric, CSRMetric
+    NonDisappearCSRMetric, NonDisappearISRMetric, EpLengthMetric, ISRMetric, CSRMetric, SumOfCostsAndMakespanMetric
 from pogema.wrappers.multi_time_limit import MultiTimeLimit
-from pogema.generator import generate_new_target
+from pogema.generator import generate_new_target, generate_from_possible_targets
 from pogema.wrappers.persistence import PersistentWrapper
 
 
@@ -300,6 +300,18 @@ class PogemaLifeLong(Pogema):
         seeds = main_rng.integers(np.iinfo(np.int32).max, size=self.grid_config.num_agents)
         self.random_generators = [np.random.default_rng(seed) for seed in seeds]
 
+    def _generate_new_target(self, agent_idx):
+        if self.grid_config.possible_targets_xy is not None:
+            new_goal = generate_from_possible_targets(self.random_generators[agent_idx], 
+                                                     self.grid_config.possible_targets_xy, 
+                                                     self.grid.positions_xy[agent_idx])
+            return (new_goal[0] + self.grid_config.obs_radius, new_goal[1] + self.grid_config.obs_radius)
+        else:
+            return generate_new_target(self.random_generators[agent_idx],
+                                    self.grid.point_to_component,
+                                    self.grid.component_to_points,
+                                    self.grid.positions_xy[agent_idx])
+
     def step(self, action: list):
         assert len(action) == self.grid_config.num_agents
         rewards = []
@@ -317,10 +329,7 @@ class PogemaLifeLong(Pogema):
                 rewards.append(0.0)
 
             if self.grid.on_goal(agent_idx):
-                self.grid.finishes_xy[agent_idx] = generate_new_target(self.random_generators[agent_idx],
-                                                                       self.grid.point_to_component,
-                                                                       self.grid.component_to_points,
-                                                                       self.grid.positions_xy[agent_idx])
+                self.grid.finishes_xy[agent_idx] = self._generate_new_target(agent_idx)
 
         for agent_idx in range(self.grid_config.num_agents):
             infos[agent_idx]['is_active'] = self.grid.is_active[agent_idx]
@@ -382,6 +391,7 @@ def _make_pogema(grid_config):
             env = NonDisappearISRMetric(env)
             env = NonDisappearCSRMetric(env)
             env = NonDisappearEpLengthMetric(env)
+            env = SumOfCostsAndMakespanMetric(env)
         elif grid_config.on_target == 'finish':
             env = ISRMetric(env)
             env = CSRMetric(env)

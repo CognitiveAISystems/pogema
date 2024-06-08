@@ -9,7 +9,8 @@ from pogema.grid_config import Easy16x16, Normal16x16, Hard16x16, ExtraHard16x16
 from pogema.grid_config import Easy32x32, Normal32x32, Hard32x32, ExtraHard32x32
 from pogema.grid_config import Easy64x64, Normal64x64, Hard64x64, ExtraHard64x64
 
-__version__ = '1.2.3a2'
+__version__ = '1.2.3a3'
+
 
 __all__ = [
     'GridConfig',

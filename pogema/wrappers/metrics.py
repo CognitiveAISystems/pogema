@@ -1,3 +1,4 @@
+import numpy as np
 from gymnasium import Wrapper
 
 
@@ -38,26 +39,6 @@ class LifeLongAverageThroughputMetric(AbstractMetric):
                 self._solved_instances += 1
         if finished:
             result = {'avg_throughput': self._solved_instances / self.grid_config.max_episode_steps}
-            self._solved_instances = 0
-            return result
-
-
-class LifeLongAttritionMetric(AbstractMetric):
-
-    def __init__(self, env):
-        super().__init__(env)
-        self._attrition_steps = 0
-        self._on_goal_steps = 0
-
-    def _compute_stats(self, step, is_on_goal, finished):
-        for agent_idx, on_goal in enumerate(is_on_goal):
-            if not on_goal:
-                self._attrition_steps += 1
-            else:
-                self._on_goal_steps += 1
-        if finished:
-            result = {
-                'attrition': self._attrition_steps / max(1, self._on_goal_steps)}
             self._solved_instances = 0
             return result
 
@@ -124,3 +105,48 @@ class ISRMetric(AbstractMetric):
             results = {'ISR': self._solved_instances / self.get_num_agents()}
             self._solved_instances = 0
             return results
+
+
+class SumOfCostsAndMakespanMetric(AbstractMetric):
+    def __init__(self, env):
+        super().__init__(env)
+        self._solve_time = [None for _ in range(self.get_num_agents())]
+
+    def _compute_stats(self, step, is_on_goal, finished):
+        for idx, on_goal in enumerate(is_on_goal):
+            if self._solve_time[idx] is None and (on_goal or finished):
+                self._solve_time[idx] = step
+            if not on_goal and not finished:
+                self._solve_time[idx] = None
+
+        if finished:
+            result = {'SoC': sum(self._solve_time) + self.get_num_agents(), 'makespan': max(self._solve_time) + 1}
+            self._solve_time = [None for _ in range(self.get_num_agents())]
+            return result
+
+
+class AgentsInObsWrapper(Wrapper):
+    def __init__(self, env):
+        super().__init__(env)
+        self._avg_num_agents = None
+
+    def count_agents(self, observations):
+        avg_num_agents = []
+        for obs in observations:
+            avg_num_agents.append(obs['agents'].sum().sum())
+        self._avg_num_agents.append(np.mean(avg_num_agents))
+
+    def step(self, actions):
+        observations, rewards, terminated, truncated, infos = self.env.step(actions)
+        self.count_agents(observations)
+        if all(terminated) or all(truncated):
+            if 'metrics' not in infos[0]:
+                infos[0]['metrics'] = {}
+            infos[0]['metrics'].update(avg_num_agents_in_obs=float(np.mean(self._avg_num_agents)))
+        return observations, rewards, terminated, truncated, infos
+
+    def reset(self, **kwargs):
+        self._avg_num_agents = []
+        observations, info = self.env.reset(**kwargs)
+        self.count_agents(observations)
+        return observations, info

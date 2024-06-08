@@ -4,7 +4,7 @@ import warnings
 import numpy as np
 
 from pogema.generator import generate_obstacles, generate_positions_and_targets_fast, \
-    get_components
+    get_components, generate_from_possible_positions
 from .grid_config import GridConfig
 from .grid_registry import in_registry, get_grid
 from .utils import render_grid
@@ -16,7 +16,6 @@ class Grid:
 
         self.config = grid_config
         self.rnd = np.random.default_rng(grid_config.seed)
-
         if self.config.map is None:
             self.obstacles = generate_obstacles(self.config)
         else:
@@ -41,6 +40,8 @@ class Grid:
                     warnings.warn(f"There is an obstacle on a finish point ({s_x}, {s_y}), replacing with free cell",
                                   Warning, stacklevel=2)
                 self.obstacles[f_x, f_y] = grid_config.FREE
+        elif grid_config.possible_agents_xy and grid_config.possible_targets_xy:
+            self.starts_xy, self.finishes_xy = generate_from_possible_positions(self.config)
         else:
             self.starts_xy, self.finishes_xy = generate_positions_and_targets_fast(self.obstacles, self.config)
 

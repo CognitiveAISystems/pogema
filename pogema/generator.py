@@ -103,6 +103,14 @@ def placing(order, components, grid, start_id, num_agents):
 
     return positions_xy, finishes_xy
 
+def generate_from_possible_positions(grid_config: GridConfig):
+    if len(grid_config.possible_agents_xy) < grid_config.num_agents or len(grid_config.possible_targets_xy) < grid_config.num_agents:
+        raise OverflowError(f"Can't create task. Not enough possible positions for {grid_config.num_agents} agents.")
+    rng = np.random.default_rng(grid_config.seed)
+    rng.shuffle(grid_config.possible_agents_xy)
+    rng.shuffle(grid_config.possible_targets_xy)
+    return grid_config.possible_agents_xy[:grid_config.num_agents], grid_config.possible_targets_xy[:grid_config.num_agents]
+    
 
 def generate_positions_and_targets_fast(obstacles, grid_config):
     c = grid_config
@@ -117,6 +125,11 @@ def generate_positions_and_targets_fast(obstacles, grid_config):
 
     return placing(order=order, components=components, grid=grid, start_id=start_id, num_agents=c.num_agents)
 
+def generate_from_possible_targets(rnd_generator, possible_positions, position):
+    new_target = tuple(rnd_generator.choice(possible_positions, 1)[0])
+    while new_target == position:
+        new_target = tuple(rnd_generator.choice(possible_positions, 1)[0])
+    return new_target
 
 def generate_new_target(rnd_generator, point_to_component, component_to_points, position):
     component_id = point_to_component[position]

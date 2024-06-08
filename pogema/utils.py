@@ -9,6 +9,10 @@ class AgentsTargetsSizeError(Exception):
     pass
 
 
+def grid_to_str(grid):
+    return '\n'.join(''.join('.' if cell == 0 else '#' for cell in row) for row in grid)
+
+
 def check_grid(obstacles, agents_xy, targets_xy):
     if bool(agents_xy) != bool(targets_xy):
         raise AgentsTargetsSizeError("Agents and targets must be defined together/undefined together!")

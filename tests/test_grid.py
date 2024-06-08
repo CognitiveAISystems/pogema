@@ -207,3 +207,45 @@ def test_duplicated_params():
 def test_custom_grid_with_empty_agents_and_targets():
     grid_map = """...."""
     Grid(GridConfig(agents_xy=None, targets_xy=None, map=grid_map, num_agents=1))
+
+
+def test_custom_grid_with_specific_positions():
+    grid_map = """
+        !!!!!!!!!!!!!!!!!!
+        !@@!@@!$$$$$$$$$$!
+        !@@!@@!##########!
+        !@@!@@!$$$$$$$$$$!
+        !!!!!!!!!!!!!!!!!!
+        !@@!@@!$$$$$$$$$$!
+        !@@!@@!##########!
+        !@@!@@!$$$$$$$$$$!
+        !!!!!!!!!!!!!!!!!!
+    """
+    Grid(GridConfig(obs_radius=2, size=4, num_agents=24, map=grid_map))
+    with pytest.raises(OverflowError):
+        Grid(GridConfig(obs_radius=2, size=4, num_agents=25, map=grid_map))
+
+    grid_map = """
+        !!!!!!!!!!!
+        !@@!@@!$$$$
+        !@@!@@!####
+        !@@!@@!$$$$
+        !!!!!!!!!!!
+        !@@!@@!$$$$
+        !@@!@@!####
+        !@@!@@!$$$$
+        !!!!!!!!!!!
+    """
+    Grid(GridConfig(obs_radius=2, num_agents=16, map=grid_map))
+    with pytest.raises(OverflowError):
+        Grid(GridConfig(obs_radius=2, num_agents=17, map=grid_map))
+
+    grid_map = """
+            !!!!!!!!!!!
+            !@@!@@!.Ab.
+            !@@!@@!####
+            !@@!@@!.aB.
+
+        """
+    with pytest.raises(KeyError):
+        Grid(GridConfig(obs_radius=2, map=grid_map))
