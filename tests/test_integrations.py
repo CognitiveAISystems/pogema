@@ -9,13 +9,13 @@ from pogema.integrations.make_pogema import pogema_v0
 def test_gym_creation():
     import gymnasium
 
-    env = gymnasium.make("Pogema-v0", grid_config=GridConfig(integration='gym'))
+    env = gymnasium.make("Pogema-v0", grid_config=GridConfig(integration='gymnasium'))
     env.reset()
 
 
 def test_integrations():
-    for integration in ['SampleFactory', 'PyMARL', 'gym', "PettingZoo", None]:
-        env = pogema_v0(integration=integration)
+    for integration in ['SampleFactory', 'PyMARL', 'gymnasium', "PettingZoo", None]:
+        env = pogema_v0(grid_config=GridConfig(integration=integration))
         env.reset()
 
 
@@ -79,7 +79,7 @@ def test_pymarl_integration():
 
 
 def test_single_agent_gym_integration():
-    gc = GridConfig(seed=7, num_agents=1, integration='gym')
+    gc = GridConfig(seed=7, num_agents=1, integration='gymnasium')
     env = pogema_v0(gc)
 
     obs, info = env.reset()

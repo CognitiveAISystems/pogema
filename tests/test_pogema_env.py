@@ -5,10 +5,6 @@ import numpy as np
 from tabulate import tabulate
 
 from pogema import pogema_v0, AnimationMonitor
-from pogema import Easy8x8, Normal8x8, Hard8x8, ExtraHard8x8
-from pogema import Easy16x16, Normal16x16, Hard16x16, ExtraHard16x16
-from pogema import Easy32x32, Normal32x32, Hard32x32, ExtraHard32x32
-from pogema import Easy64x64, Normal64x64, Hard64x64, ExtraHard64x64
 
 from pogema.envs import ActionsSampler
 from pogema.grid import GridConfig
@@ -168,40 +164,6 @@ def test_life_long_pogema_animation():
     env = AnimationMonitor(env)
     env.reset()
     run_episode(env=env)
-
-
-def test_predefined_configurations():
-    def get_num_agents_by_target_density(size, agent_density, obstacle_density):
-        return round(agent_density * (size * size * (1.0 - obstacle_density)))
-
-    def get_target_density_by_num_agents(size, num_agents, obstacle_density):
-        return num_agents / (size * size * (1.0 - obstacle_density))
-
-    predefined_grids = [
-        Easy8x8, Normal8x8, Hard8x8, ExtraHard8x8,
-        Easy16x16, Normal16x16, Hard16x16, ExtraHard16x16,
-        Easy32x32, Normal32x32, Hard32x32, ExtraHard32x32,
-        Easy64x64, Normal64x64, Hard64x64, ExtraHard64x64,
-    ]
-
-    # checking that the number of agents (agent density) is correct
-    for make_grid_config_func in predefined_grids:
-        gc = make_grid_config_func(seed=42)
-        for difficulty, agent_density in zip(['Easy', 'Normal', 'Hard', 'ExtraHard'],
-                                             [0.02232142, 0.04464285, 0.08928571, 0.17857142]):
-            if re.match(rf'^{difficulty}\d+x\d+', make_grid_config_func.__name__):
-                assert np.isclose(get_target_density_by_num_agents(gc.size, gc.num_agents, gc.density), agent_density)
-
-    # checking creation
-    for make_grid_config_func in predefined_grids:
-        gc = make_grid_config_func(seed=42)
-        env = pogema_v0(gc)
-        env.reset()
-
-    # checking map_name
-    for make_grid_config_func in predefined_grids:
-        gc = make_grid_config_func(seed=42)
-        assert gc.map_name == make_grid_config_func.__name__
 
 
 def test_persistent_env(num_steps=100):

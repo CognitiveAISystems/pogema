@@ -61,7 +61,7 @@ def make_pogema(grid_config: Union[GridConfig, dict] = GridConfig(), *args, **kw
         raise NotImplementedError('Please use PettingZoo integration for rllib')
     elif grid_config.integration == 'PettingZoo':
         return parallel_env(grid_config)
-    elif grid_config.integration == 'gym':
+    elif grid_config.integration == 'gymnasium':
         return make_single_agent_gym(grid_config)
 
     raise KeyError(grid_config.integration)

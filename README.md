@@ -25,9 +25,9 @@ Just install from PyPI:
 ## Using Example
 
 ```python
-from pogema import pogema_v0, Hard8x8
+from pogema import pogema_v0, GridConfig
 
-env = pogema_v0(grid_config=Hard8x8())
+env = pogema_v0(grid_config=GridConfig())
 
 obs, info = env.reset()
 
@@ -37,31 +37,10 @@ while True:
     env.render()
     if all(terminated) or all(truncated):
         break
-
 ```
 
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/19dSEGTQeM3oVJtVjpC162t1XApmv6APc?usp=sharing) 
 
-## Environments
-
-| Config | agents density  | num agents  |  horizon    |
-| ----------------- | ----- | ----- | ---- |
-| Easy8x8           | 2.2%  |   1   |  64  |
-| Normal8x8         | 4.5%  |   2   |  64  |
-| Hard8x8           | 8.9%  |   4   |  64  |
-| ExtraHard8x8      | 17.8% |   8   |  64  |
-| Easy16x16         | 2.2%  |   4   |  128 |
-| Normal16x16       | 4.5%  |   8   |  128 |
-| Hard16x16         | 8.9%  |   16  |  128 |
-| ExtraHard16x16    | 17.8% |   32  |  128 |
-| Easy32x32         | 2.2%  |   16  |  256 |
-| Normal32x32       | 4.5%  |   32  |  256 |
-| Hard32x32         | 8.9%  |   64  |  256 |
-| ExtraHard32x32    | 17.8% |   128 |  256 |
-| Easy64x64         | 2.2%  |   64  |  512 |
-| Normal64x64       | 4.5%  |   128 |  512 |
-| Hard64x64         | 8.9%  |   256 |  512 |
-| ExtraHard64x64    | 17.8% |   512 |  512 |   
 
 ## Baselines 
 The [baseline implementations](https://github.com/Tviskaron/pogema-baselines) are available as a separate repository.
@@ -99,12 +78,9 @@ env = pogema_v0(GridConfig(integration="SampleFactory"))
 Pogema is fully capable for single-agent pathfinding tasks. 
 
 ```python
-import gymnasium as gym
-import pogema
+from pogema import pogema_v0, GridConfig
 
-# This interface provides experience only for agent with id=0,
-# other agents will take random actions.
-env = gym.make("Pogema-v0")
+env = pogema_v0(GridConfig(integration="gymnasium"))
 ```
 
 Example of training [stable-baselines3](https://github.com/DLR-RM/stable-baselines3) DQN to solve single-agent pathfinding tasks: [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1vPwTd0PnzpWrB-bCHqoLSVwU9G9Lgcmv?usp=sharing)
