@@ -127,16 +127,17 @@ class SumOfCostsAndMakespanMetric(AbstractMetric):
             return result
 
 
-class AgentsInObsWrapper(Wrapper):
+class AgentsDensityWrapper(Wrapper):
     def __init__(self, env):
         super().__init__(env)
-        self._avg_num_agents = None
+        self._avg_agents_density = None
 
     def count_agents(self, observations):
-        avg_num_agents = []
+        avg_agents_density = []
         for obs in observations:
-            avg_num_agents.append(obs['agents'].sum().sum())
-        self._avg_num_agents.append(np.mean(avg_num_agents))
+            traversable_cells = np.size(obs['obstacles']) - np.count_nonzero(obs['obstacles'])
+            avg_agents_density.append(np.count_nonzero(obs['agents']) / traversable_cells)
+        self._avg_agents_density.append(np.mean(avg_agents_density))
 
     def step(self, actions):
         observations, rewards, terminated, truncated, infos = self.env.step(actions)
@@ -144,11 +145,11 @@ class AgentsInObsWrapper(Wrapper):
         if all(terminated) or all(truncated):
             if 'metrics' not in infos[0]:
                 infos[0]['metrics'] = {}
-            infos[0]['metrics'].update(avg_num_agents_in_obs=float(np.mean(self._avg_num_agents)))
+            infos[0]['metrics'].update(avg_agents_density=float(np.mean(self._avg_agents_density)))
         return observations, rewards, terminated, truncated, infos
 
     def reset(self, **kwargs):
-        self._avg_num_agents = []
+        self._avg_agents_density = []
         observations, info = self.env.reset(**kwargs)
         self.count_agents(observations)
         return observations, info
