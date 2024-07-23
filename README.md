@@ -142,14 +142,13 @@ env = pogema_v0(grid_config=grid_config)
 ## Citation
 If you use this repository in your research or wish to cite it, please make a reference to our paper: 
 ```
-@misc{https://doi.org/10.48550/arxiv.2206.10944,
-  doi = {10.48550/ARXIV.2206.10944},  
-  url = {https://arxiv.org/abs/2206.10944},
-  author = {Skrynnik, Alexey and Andreychuk, Anton and Yakovlev, Konstantin and Panov, Aleksandr I.},
-  keywords = {Machine Learning (cs.LG), Artificial Intelligence (cs.AI), Multiagent Systems (cs.MA), FOS: Computer and information sciences, FOS: Computer and information sciences},
-  title = {POGEMA: Partially Observable Grid Environment for Multiple Agents},
-  publisher = {arXiv},
-  year = {2022},
-  copyright = {arXiv.org perpetual, non-exclusive license}
+@misc{skrynnik2024pogema,
+      title={POGEMA: A Benchmark Platform for Cooperative Multi-Agent Navigation}, 
+      author={Alexey Skrynnik and Anton Andreychuk and Anatolii Borzilov and Alexander Chernyavskiy and Konstantin Yakovlev and Aleksandr Panov},
+      year={2024},
+      eprint={2407.14931},
+      archivePrefix={arXiv},
+      primaryClass={cs.LG},
+      url={https://arxiv.org/abs/2407.14931}, 
 }
 ```
