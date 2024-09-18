@@ -42,8 +42,8 @@ while True:
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/19dSEGTQeM3oVJtVjpC162t1XApmv6APc?usp=sharing) 
 
 
-## Baselines 
-The [baseline implementations](https://github.com/Tviskaron/pogema-baselines) are available as a separate repository.
+## Baselines and Evaluation Protocol 
+The baseline implementations and evaluation pipeline are presented in [POGEMA Benchmark](https://github.com/Cognitive-AI-Systems/pogema-benchmark) repository.
 
 ## Interfaces
 Pogema provides integrations with a range of MARL frameworks: PettingZoo, PyMARL and SampleFactory. 
