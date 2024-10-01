@@ -1,14 +1,6 @@
 <div align="center">
 
-
-[![Pogema logo](https://raw.githubusercontent.com/Tviskaron/pogema-pics/main/pogema-logo.svg)](https://github.com/AIRI-Institute/pogema)    
-
 **Partially-Observable Grid Environment for Multiple Agents**
-
-[![CodeFactor](https://www.codefactor.io/repository/github/tviskaron/pogema/badge)](https://www.codefactor.io/repository/github/tviskaron/pogema)
-[![Downloads](https://static.pepy.tech/badge/pogema)](https://pepy.tech/project/pogema)
-[![CI](https://github.com/AIRI-Institute/pogema/actions/workflows/CI.yml/badge.svg?branch=main)](https://github.com/AIRI-Institute/pogema/actions/workflows/CI.yml) 
-[![CodeQL](https://github.com/AIRI-Institute/pogema/actions/workflows/codeql-analysis.yml/badge.svg)](https://github.com/AIRI-Institute/pogema/actions/workflows/codeql-analysis.yml)    
     
 </div> 
 
@@ -20,7 +12,7 @@ POGEMA stands for Partially-Observable Grid Environment for Multiple Agents. It 
 
 Just install from PyPI:
 
-```pip install pogema```
+```python setup install```
 
 ## Using Example
 
@@ -38,12 +30,6 @@ while True:
     if all(terminated) or all(truncated):
         break
 ```
-
-[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/19dSEGTQeM3oVJtVjpC162t1XApmv6APc?usp=sharing) 
-
-
-## Baselines and Evaluation Protocol 
-The baseline implementations and evaluation pipeline are presented in [POGEMA Benchmark](https://github.com/Cognitive-AI-Systems/pogema-benchmark) repository.
 
 ## Interfaces
 Pogema provides integrations with a range of MARL frameworks: PettingZoo, PyMARL and SampleFactory. 
@@ -82,9 +68,6 @@ from pogema import pogema_v0, GridConfig
 
 env = pogema_v0(GridConfig(integration="gymnasium"))
 ```
-
-Example of training [stable-baselines3](https://github.com/DLR-RM/stable-baselines3) DQN to solve single-agent pathfinding tasks: [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1vPwTd0PnzpWrB-bCHqoLSVwU9G9Lgcmv?usp=sharing)
-
 
 
 
@@ -134,21 +117,4 @@ grid_config = GridConfig(map=grid, num_agents=8)
 
 # Create custom Pogema environment
 env = pogema_v0(grid_config=grid_config)
-```
-
-
-
-
-## Citation
-If you use this repository in your research or wish to cite it, please make a reference to our paper: 
-```
-@misc{skrynnik2024pogema,
-      title={POGEMA: A Benchmark Platform for Cooperative Multi-Agent Navigation}, 
-      author={Alexey Skrynnik and Anton Andreychuk and Anatolii Borzilov and Alexander Chernyavskiy and Konstantin Yakovlev and Aleksandr Panov},
-      year={2024},
-      eprint={2407.14931},
-      archivePrefix={arXiv},
-      primaryClass={cs.LG},
-      url={https://arxiv.org/abs/2407.14931}, 
-}
 ```
