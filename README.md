@@ -1,7 +1,9 @@
 <div align="center">
 
 **Partially-Observable Grid Environment for Multiple Agents**
-    
+
+[![Pogema logo](pogema-logo-v1.svg)](https://anonymous.4open.science/r/pogema-7439/README.md)    
+
 </div> 
 
 Partially Observable Multi-Agent Pathfinding (PO-MAPF) is a challenging problem that fundamentally differs from regular MAPF. In regular MAPF, a central controller constructs a joint plan for all agents before they start execution. However, PO-MAPF is intrinsically decentralized, and decision-making, such as planning, is interleaved with execution. At each time step, an agent receives a local observation of the environment and decides which action to take. The ultimate goal for the agents is to reach their goals while avoiding collisions with each other and the static obstacles.
