@@ -31,13 +31,12 @@ def find_version(*file_paths):
 
 setup(
     name='pogema',
-    author='Alexey Skrynnik',
+    author='ICLR-7439',
     license='MIT',
     version=find_version("pogema", "__init__.py"),
     description='Partially Observable Grid Environment for Multiple Agents',
     long_description=long_description,
     long_description_content_type='text/markdown',
-    url='https://github.com/AIRI-Institute/pogema',
     install_requires=[
         "gymnasium==0.28.1",
         "numpy>=1.19.2,<=1.23.5",
