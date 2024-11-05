@@ -2,6 +2,7 @@ import re
 import time
 
 import numpy as np
+import pytest
 from tabulate import tabulate
 
 from pogema import pogema_v0, AnimationMonitor
@@ -164,6 +165,40 @@ def test_life_long_pogema_animation():
     env = AnimationMonitor(env)
     env.reset()
     run_episode(env=env)
+
+
+def test_custom_positions_and_num_agents():
+    grid = """
+    ....
+    ....
+    """
+    gc = GridConfig(
+        map=grid,
+        agents_xy=[[0, 0], [0, 1], [0, 2], [0, 3]],
+        targets_xy=[[1, 0], [1, 1], [1, 2], [1, 3]],
+    )
+
+    for num_agents in range(1, 5):
+        gc.num_agents = num_agents
+        env = pogema_v0(grid_config=gc)
+        env.reset()
+        assert num_agents == len(env.get_agents_xy())
+        assert num_agents == len(env.get_targets_xy())
+
+
+def test_custom_positions_and_empty_num_agents():
+    grid = """
+    ....
+    ....
+    """
+    gc = GridConfig(
+        map=grid,
+        agents_xy=[[0, 0], [0, 1], [0, 2], [0, 3]],
+        targets_xy=[[1, 0], [1, 1], [1, 2], [1, 3]],
+    )
+    env = pogema_v0(grid_config=gc)
+    env.reset()
+    assert len(gc.agents_xy) == len(env.get_agents_xy())
 
 
 def test_persistent_env(num_steps=100):

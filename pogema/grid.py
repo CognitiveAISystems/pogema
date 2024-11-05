@@ -28,7 +28,10 @@ class Grid:
             self.starts_xy, self.finishes_xy = grid_config.agents_xy, grid_config.targets_xy
             if len(self.starts_xy) != len(self.finishes_xy):
                 raise IndexError("Can't create task. Please provide agents_xy and targets_xy of the same size.")
-            grid_config.num_agents = len(self.starts_xy)
+            if grid_config.num_agents > len(self.starts_xy):
+                raise IndexError(f"Not enough agents_xy and targets_xy to place {grid_config.num_agents} agents")
+            self.starts_xy = self.starts_xy[:grid_config.num_agents]
+            self.finishes_xy = self.finishes_xy[:grid_config.num_agents]
             for start_xy, finish_xy in zip(self.starts_xy, self.finishes_xy):
                 s_x, s_y = start_xy
                 f_x, f_y = finish_xy

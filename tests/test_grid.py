@@ -162,7 +162,7 @@ def test_str_custom_map():
         .B.......A.
         .....#.....
     """
-    grid = Grid(GridConfig(obs_radius=2, size=4, num_agents=5, density=0.3, map=grid_map))
+    grid = Grid(GridConfig(obs_radius=2, size=4, density=0.3, map=grid_map))
     assert (grid.config.num_agents == 3)
     assert (np.isclose(0.1404958, grid.config.density))
     assert (np.isclose(11, grid.config.size))
@@ -249,3 +249,19 @@ def test_custom_grid_with_specific_positions():
         """
     with pytest.raises(KeyError):
         Grid(GridConfig(obs_radius=2, map=grid_map))
+
+
+def test_restricted_grid():
+    grid = """
+           !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+           !@@!@@!$$$$$$$$$$!$$$$$$$$$$!$$$$$$$$$$!@@!@@!
+           !@@!@@!##########!##########!##########!@@!@@!
+           !@@!@@!$$$$$$$$$$!$$$$$$$$$$!$$$$$$$$$$!@@!@@!
+           !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+           """
+    env = pogema_v0(grid_config=GridConfig(map=grid, num_agents=24, seed=0, obs_radius=2))
+    env.reset()
+
+    with pytest.raises(OverflowError):
+        env = pogema_v0(grid_config=GridConfig(map=grid, num_agents=25, seed=0, obs_radius=2))
+        env.reset()
