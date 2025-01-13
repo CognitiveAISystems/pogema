@@ -105,8 +105,8 @@ class PersistentWrapper(Wrapper):
         result = [cls.agent_state_to_full_list(agent_states, max_steps) for agent_states in history]
         return result
 
-    def get_full_history(self, history):
-        return [self.agent_state_to_full_list(agent_states, self._step) for agent_states in history]
+    def get_full_history(self):
+        return [self.agent_state_to_full_list(agent_states, self._step) for agent_states in self._agent_states]
 
     def get_history(self):
         return self._agent_states
