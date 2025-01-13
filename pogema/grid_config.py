@@ -36,7 +36,7 @@ class GridConfig(CommonSettings, ):
 
     @validator('size')
     def size_restrictions(cls, v):
-        assert 2 <= v <= 1024, "size must be in [2, 1024]"
+        assert 2 <= v <= 4096, "size must be in [2, 4096]"
         return v
 
     @validator('density')
@@ -63,7 +63,7 @@ class GridConfig(CommonSettings, ):
                 v = len(values['agents_xy'])
             else:
                 v = 1
-        assert 1 <= v <= 10000, "num_agents must be in [1, 10000]"
+        assert 1 <= v <= 10000000, "num_agents must be in [1, 10000000]"
         return v
 
     @validator('obs_radius')
