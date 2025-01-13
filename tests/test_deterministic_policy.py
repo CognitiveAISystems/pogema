@@ -177,7 +177,6 @@ def test_non_disappearing():
     results_generator = run_policy(gc, save_animation=False)
 
     metrics = results_generator.__next__()
-    print(metrics)
     assert np.isclose(metrics['ep_length'], 21)
     assert np.isclose(metrics['CSR'], 1.0)
     assert np.isclose(metrics['ISR'], 1.0)
