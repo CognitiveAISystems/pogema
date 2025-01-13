@@ -93,7 +93,8 @@ class PersistentWrapper(Wrapper):
     def agent_state_to_full_list(agent_states, num_steps):
         result = []
         current_state_id = 0
-        for episode_step in range(num_steps):
+        # going over num_steps + 1, to handle last step
+        for episode_step in range(num_steps + 1):
             if current_state_id < len(agent_states) - 1 and agent_states[current_state_id + 1].step == episode_step:
                 current_state_id += 1
             result.append(agent_states[current_state_id])
@@ -101,7 +102,7 @@ class PersistentWrapper(Wrapper):
 
     @classmethod
     def decompress_history(cls, history):
-        max_steps = max([agent_states[-1].step + 1 for agent_states in history])
+        max_steps = max([agent_states[-1].step for agent_states in history])
         result = [cls.agent_state_to_full_list(agent_states, max_steps) for agent_states in history]
         return result
 
