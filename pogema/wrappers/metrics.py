@@ -63,7 +63,7 @@ class NonDisappearEpLengthMetric(AbstractMetric):
 
     def _compute_stats(self, step, is_on_goal, finished):
         if finished:
-            return {'ep_length': step}
+            return {'ep_length': step + 1}
 
 
 class EpLengthMetric(AbstractMetric):
