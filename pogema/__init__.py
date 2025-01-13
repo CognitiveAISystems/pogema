@@ -4,7 +4,7 @@ from pogema.integrations.make_pogema import pogema_v0
 from pogema.svg_animation.animation_wrapper import AnimationMonitor, AnimationConfig
 from pogema.a_star_policy import AStarAgent, BatchAStarAgent
 
-__version__ = '1.3.2a0'
+__version__ = '1.3.2a1'
 
 __all__ = [
     'GridConfig',
