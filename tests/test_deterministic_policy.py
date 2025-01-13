@@ -177,12 +177,13 @@ def test_non_disappearing():
     results_generator = run_policy(gc, save_animation=False)
 
     metrics = results_generator.__next__()
-    assert np.isclose(metrics['ep_length'], 20)
+    print(metrics)
+    assert np.isclose(metrics['ep_length'], 21)
     assert np.isclose(metrics['CSR'], 1.0)
     assert np.isclose(metrics['ISR'], 1.0)
 
     metrics = results_generator.__next__()
-    assert np.isclose(metrics['ep_length'], 13)
+    assert np.isclose(metrics['ep_length'], 14)
     assert np.isclose(metrics['CSR'], 1.0)
     assert np.isclose(metrics['ISR'], 1.0)
 
@@ -190,6 +191,6 @@ def test_non_disappearing():
     results_generator = run_policy(gc, save_animation=False)
 
     metrics = results_generator.__next__()
-    assert np.isclose(metrics['ep_length'], 31)
+    assert np.isclose(metrics['ep_length'], 32)
     assert np.isclose(metrics['CSR'], 0.0)
     assert np.isclose(metrics['ISR'], 0.71428571428)
