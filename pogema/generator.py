@@ -135,7 +135,8 @@ def generate_new_target(rnd_generator, point_to_component, component_to_points, 
     component_id = point_to_component[position]
     component = component_to_points[component_id]
     new_target = tuple(*rnd_generator.choice(component, 1))
-
+    while new_target == position:
+        new_target = tuple(*rnd_generator.choice(component, 1))
     return new_target
 
 
