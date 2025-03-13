@@ -1,7 +1,7 @@
 <div align="center">
 
 
-[![Pogema logo](https://raw.githubusercontent.com/Tviskaron/pogema-pics/main/pogema-logo.svg)](https://github.com/AIRI-Institute/pogema)    
+[![Pogema logo](https://raw.githubusercontent.com/Tviskaron/pogema-pics/main/pogema-logo-v1.svg)](https://github.com/AIRI-Institute/pogema)    
 
 **Partially-Observable Grid Environment for Multiple Agents**
 
