@@ -21,9 +21,9 @@ class GridConfig(CommonSettings, ):
     collision_system: Literal['block_both', 'priority', 'soft'] = 'priority'
     persistent: bool = False
     observation_type: Literal['POMAPF', 'MAPF', 'default'] = 'default'
-    map: Union[list, str] = None
+    map: Optional[Union[list, str]] = None
 
-    map_name: str = None
+    map_name: Optional[str] = None
 
     integration: Literal['SampleFactory', 'PyMARL', 'rllib', 'gymnasium', 'PettingZoo'] = None
     max_episode_steps: int = 64
