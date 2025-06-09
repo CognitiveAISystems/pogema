@@ -153,8 +153,8 @@ class Grid:
         x -= gc.obs_radius
         y -= gc.obs_radius
 
-        x /= gc.size - 1
-        y /= gc.size - 1
+        x /= gc.height - 1
+        y /= gc.width - 1
 
         return x, y
 

@@ -9,10 +9,10 @@ from pogema import GridConfig
 def generate_obstacles(grid_config: GridConfig, rnd=None):
     if rnd is None:
         rnd = np.random.default_rng(grid_config.seed)
-    return rnd.binomial(1, grid_config.density, (grid_config.size, grid_config.size))
+    return rnd.binomial(1, grid_config.density, (grid_config.height, grid_config.width))
 
 
-def bfs(grid, moves, size, start_id, free_cell):
+def bfs(grid, moves, start_id, free_cell):
     q = []
     current_id = start_id
 
@@ -118,7 +118,7 @@ def generate_positions_and_targets_fast(obstacles, grid_config):
 
     start_id = max(c.FREE, c.OBSTACLE) + 1
 
-    components = bfs(grid, tuple(c.MOVES), c.size, start_id, free_cell=c.FREE)
+    components = bfs(grid, tuple(c.MOVES), start_id, free_cell=c.FREE)
     height, width = obstacles.shape
     order = [(x, y) for x in range(height) for y in range(width) if grid[x, y] >= start_id]
     np.random.default_rng(c.seed).shuffle(order)
@@ -145,7 +145,7 @@ def get_components(grid_config, obstacles, positions_xy, target_xy):
     grid = obstacles.copy()
 
     start_id = max(c.FREE, c.OBSTACLE) + 1
-    bfs(grid, tuple(c.MOVES), c.size, start_id, free_cell=c.FREE)
+    bfs(grid, tuple(c.MOVES), start_id, free_cell=c.FREE)
     height, width = obstacles.shape
 
     comp_to_points = defaultdict(list)

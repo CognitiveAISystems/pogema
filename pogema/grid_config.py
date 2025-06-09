@@ -1,6 +1,6 @@
 import sys
 from typing import Optional, Union
-from pydantic import validator
+from pydantic import validator, root_validator
 
 from pogema.utils import CommonSettings
 
@@ -10,6 +10,8 @@ from typing_extensions import Literal
 class GridConfig(CommonSettings, ):
     on_target: Literal['finish', 'nothing', 'restart'] = 'finish'
     seed: Optional[int] = None
+    width: Optional[int] = None
+    height: Optional[int] = None
     size: int = 8
     density: float = 0.3
     obs_radius: int = 5
@@ -29,15 +31,51 @@ class GridConfig(CommonSettings, ):
     max_episode_steps: int = 64
     auto_reset: Optional[bool] = None
 
+    @root_validator
+    def validate_dimensions(cls, values):
+        """Handle the relationship between size, width, and height."""
+        width_provided = values.get('width') is not None
+        height_provided = values.get('height') is not None
+        
+        if width_provided and not height_provided:
+            raise ValueError("Invalid dimension configuration. Please provide height.")
+        elif not width_provided and height_provided:
+            raise ValueError("Invalid dimension configuration. Please provide width.")
+        
+        if not width_provided and not height_provided:
+            values['width'] = values.get('size', 8)
+            values['height'] = values.get('size', 8)
+        if 'size' not in values or values.get('size') != max(values.get('width'), values.get('height')):
+            values['size'] = max(values.get('width'), values.get('height'))
+        
+        return values
+
     @validator('seed')
     def seed_initialization(cls, v):
         assert v is None or (0 <= v < sys.maxsize), "seed must be in [0, " + str(sys.maxsize) + ']'
         return v
 
+    @staticmethod
+    def _validate_dimension(v, field_name):
+        """Helper method to validate dimension values."""
+        if v is not None:
+            if field_name == 'size':
+                assert 2 <= v <= 4096, f"{field_name} must be in [2, 4096]"
+            else:
+                assert 1 <= v <= 4096, f"{field_name} must be in [1, 4096]"
+        return v
+
     @validator('size')
     def size_restrictions(cls, v):
-        assert 2 <= v <= 4096, "size must be in [2, 4096]"
-        return v
+        return cls._validate_dimension(v, 'size')
+
+    @validator('width')
+    def width_restrictions(cls, v):
+        return cls._validate_dimension(v, 'width')
+
+    @validator('height')
+    def height_restrictions(cls, v):
+        return cls._validate_dimension(v, 'height')
 
     @validator('density')
     def density_restrictions(cls, v):
@@ -47,13 +85,17 @@ class GridConfig(CommonSettings, ):
     @validator('agents_xy')
     def agents_xy_validation(cls, v, values):
         if v is not None:
-            cls.check_positions(v, values['size'])
+            width = values.get('width') or values.get('size', 8)
+            height = values.get('height') or values.get('size', 8)
+            cls.check_positions(v, width, height)
         return v
 
     @validator('targets_xy')
     def targets_xy_validation(cls, v, values):
         if v is not None:
-            cls.check_positions(v, values['size'])
+            width = values.get('width') or values.get('size', 8)
+            height = values.get('height') or values.get('size', 8)
+            cls.check_positions(v, width, height)
         return v
 
     @validator('num_agents', always=True)
@@ -92,12 +134,17 @@ class GridConfig(CommonSettings, ):
                     'targets_xy') is None) and possible_agents_xy and possible_targets_xy:
                 values['possible_agents_xy'] = possible_agents_xy
                 values['possible_targets_xy'] = possible_targets_xy
-        size = len(v)
+        
+        height = len(v)
+        width = 0
         area = 0
         for line in v:
-            size = max(size, len(line))
+            width = max(width, len(line))
             area += len(line)
-        values['size'] = size
+        
+        values['size'] = max(width, height)
+        values['width'] = width
+        values['height'] = height
         values['density'] = sum([sum(line) for line in v]) / area
 
         return v
@@ -111,10 +158,10 @@ class GridConfig(CommonSettings, ):
         return v
 
     @staticmethod
-    def check_positions(v, size):
+    def check_positions(v, width, height):
         for position in v:
             x, y = position
-            if not (0 <= x < size and 0 <= y < size):
+            if not (0 <= x < height and 0 <= y < width):
                 raise IndexError("Position is out of bounds!")
 
     @staticmethod

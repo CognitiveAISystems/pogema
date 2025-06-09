@@ -265,3 +265,57 @@ def test_restricted_grid():
     with pytest.raises(OverflowError):
         env = pogema_v0(grid_config=GridConfig(map=grid, num_agents=25, seed=0, obs_radius=2))
         env.reset()
+
+
+def test_rectangular_grid_basic():
+    config = GridConfig(width=12, height=8)
+    assert np.isclose(config.width, 12)
+    assert np.isclose(config.height, 8)
+    assert np.isclose(config.size, 12)
+
+
+def test_rectangular_grid_backward_compatibility():
+    config = GridConfig(size=10)
+    assert np.isclose(config.size, 10)
+    assert np.isclose(config.width, 10)
+    assert np.isclose(config.height, 10)
+
+
+def test_rectangular_grid_mixed_config():
+    config = GridConfig(size=8, width=12, height=6)
+    assert np.isclose(config.width, 12)
+    assert np.isclose(config.height, 6)
+    assert np.isclose(config.size, 12)
+
+
+def test_rectangular_grid_validation():
+    with pytest.raises(ValueError):
+        GridConfig(width=12)
+    
+    with pytest.raises(ValueError):
+        GridConfig(height=8)
+    
+    GridConfig(width=12, height=8)
+    GridConfig(size=10)
+    GridConfig(size=10, width=12, height=8)
+
+
+def test_rectangular_grid_position_validation():
+    config = GridConfig(width=12, height=8, agents_xy=[[0, 11], [7, 0]], targets_xy=[[7, 11], [0, 0]])
+    assert len(config.agents_xy) == 2
+    assert len(config.targets_xy) == 2
+    
+    with pytest.raises(IndexError):
+        GridConfig(width=12, height=8, agents_xy=[[8, 0]], targets_xy=[[0, 0]])
+    
+    with pytest.raises(IndexError):
+        GridConfig(width=12, height=8, agents_xy=[[0, 12]], targets_xy=[[0, 0]])
+
+
+def test_rectangular_grid_creation():
+    config = GridConfig(width=12, height=8, seed=1, num_agents=2)
+    grid = Grid(config)
+    
+    assert np.isclose(grid.config.width, 12)
+    assert np.isclose(grid.config.height, 8)
+    assert np.isclose(grid.config.size, 12)
