@@ -111,7 +111,7 @@ class GridConfig(CommonSettings, ):
             else:
                 on_target = values.get('on_target', 'finish')
                 if on_target == 'restart':
-                    raise ValueError("on_target='restart' requires goal sequences, not single goals. Use format: targets_xy=[[x1,y1],[x2,y2]], [[x3,y3],[x4,y4]]")
+                    raise ValueError("on_target='restart' requires goal sequences, not single goals. Use format: targets_xy: [[[x1,y1],[x2,y2]], [[x3,y3],[x4,y4]]]")
                 cls.check_positions(v, width, height)
         return v
 

@@ -368,6 +368,14 @@ def test_goal_sequences_validation():
             agents_xy=[[0, 0]],
             targets_xy=[[[2, 2], [10, 10]]]
         )
+    
+    with pytest.raises(ValueError, match="on_target='restart' requires goal sequences"):
+        GridConfig(
+            width=8, height=8,
+            agents_xy=[[0, 0], [1, 1]],
+            targets_xy=[[2, 2], [3, 3]],
+            on_target='restart'
+        )
 
 
 def test_grid_with_goal_sequences():
