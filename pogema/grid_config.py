@@ -95,8 +95,34 @@ class GridConfig(CommonSettings, ):
         if v is not None:
             width = values.get('width') or values.get('size', 8)
             height = values.get('height') or values.get('size', 8)
-            cls.check_positions(v, width, height)
+            
+            if not v or not isinstance(v, (list, tuple)):
+                raise ValueError("targets_xy must be a list")
+            
+            first_element = v[0]
+            if not isinstance(first_element, (list, tuple)):
+                raise ValueError("Invalid targets_xy format")
+            
+            if isinstance(first_element[0], (list, tuple)):
+                for agent_goals in v:
+                    if not isinstance(agent_goals, (list, tuple)) or len(agent_goals) < 2:
+                        raise ValueError("Each agent must have at least two goals in the sequence")
+                    cls.check_positions(agent_goals, width, height)
+            else:
+                cls.check_positions(v, width, height)
         return v
+
+    @staticmethod
+    def check_positions(v, width, height):
+        for position in v:
+            if not isinstance(position, (list, tuple)) or len(position) != 2:
+                raise ValueError("Position must be a list/tuple of length 2")
+            x, y = position
+            if not isinstance(x, int) or not isinstance(y, int):
+                raise ValueError("Position coordinates must be integers")
+            if not (0 <= x < height and 0 <= y < width):
+                raise IndexError("Position is out of bounds!")
+
 
     @validator('num_agents', always=True)
     def num_agents_must_be_positive(cls, v, values):
@@ -156,13 +182,6 @@ class GridConfig(CommonSettings, ):
     @validator('possible_targets_xy')
     def possible_targets_xy_validation(cls, v):
         return v
-
-    @staticmethod
-    def check_positions(v, width, height):
-        for position in v:
-            x, y = position
-            if not (0 <= x < height and 0 <= y < width):
-                raise IndexError("Position is out of bounds!")
 
     @staticmethod
     def str_map_to_list(str_map, free, obstacle):

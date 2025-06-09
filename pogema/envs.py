@@ -1,5 +1,5 @@
 from typing import Optional
-
+import warnings
 import numpy as np
 import gymnasium
 from gymnasium.error import ResetNeeded
@@ -292,6 +292,8 @@ class Pogema(PogemaBase):
 class PogemaLifeLong(Pogema):
     def __init__(self, grid_config=GridConfig(num_agents=2)):
         super().__init__(grid_config)
+        self.current_goal_indices = [0] * grid_config.num_agents
+        self.has_custom_sequences = grid_config.targets_xy is not None
 
     def _initialize_grid(self):
         self.grid: GridLifeLong = GridLifeLong(grid_config=self.grid_config)
@@ -300,8 +302,30 @@ class PogemaLifeLong(Pogema):
         seeds = main_rng.integers(np.iinfo(np.int32).max, size=self.grid_config.num_agents)
         self.random_generators = [np.random.default_rng(seed) for seed in seeds]
 
+    def reset(self, seed: Optional[int] = None, return_info: bool = True, options: Optional[dict] = None):
+        self.current_goal_indices = [0] * self.grid_config.num_agents
+        return super().reset(seed=seed, return_info=return_info, options=options)
+
     def _generate_new_target(self, agent_idx):
-        if self.grid_config.possible_targets_xy is not None:
+        if self.has_custom_sequences:
+            agent_targets = self.grid_config.targets_xy[agent_idx]
+            current_idx = self.current_goal_indices[agent_idx]
+            next_target = agent_targets[current_idx]
+            
+            self.current_goal_indices[agent_idx] = (current_idx + 1) % len(agent_targets)
+            
+            if self.current_goal_indices[agent_idx] == 0 and current_idx == len(agent_targets) - 1:
+                warnings.warn(
+                    f"Agent {agent_idx} has completed all {len(agent_targets)} provided targets and "
+                    f"is cycling back to the beginning. Provide more targets for the "
+                    f"{self.grid_config.max_episode_steps} episode length.",
+                    UserWarning,
+                    stacklevel=2
+                )
+            
+            return (next_target[0] + self.grid_config.obs_radius, 
+                   next_target[1] + self.grid_config.obs_radius)
+        elif self.grid_config.possible_targets_xy is not None:
             new_goal = generate_from_possible_targets(self.random_generators[agent_idx], 
                                                      self.grid_config.possible_targets_xy, 
                                                      self.grid.positions_xy[agent_idx])
