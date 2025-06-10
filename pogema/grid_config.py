@@ -32,8 +32,7 @@ class GridConfig(CommonSettings, ):
     auto_reset: Optional[bool] = None
 
     @root_validator
-    def validate_dimensions(cls, values):
-        """Handle the relationship between size, width, and height."""
+    def validate_dimensions_and_positions(cls, values):
         width_provided = values.get('width') is not None
         height_provided = values.get('height') is not None
         
@@ -48,6 +47,24 @@ class GridConfig(CommonSettings, ):
         if 'size' not in values or values.get('size') != max(values.get('width'), values.get('height')):
             values['size'] = max(values.get('width'), values.get('height'))
         
+
+        width = values.get('width')
+        height = values.get('height')
+        
+        if width is not None and height is not None:
+            agents_xy = values.get('agents_xy')
+            if agents_xy is not None:
+                cls.check_positions(agents_xy, width, height)
+
+            targets_xy = values.get('targets_xy')
+            if targets_xy is not None:
+                first_element = targets_xy[0]
+                if isinstance(first_element[0], (list, tuple)):
+                    for agent_goals in targets_xy:
+                        cls.check_positions(agent_goals, width, height)
+                else:
+                    cls.check_positions(targets_xy, width, height)
+        
         return values
 
     @validator('seed')
@@ -57,7 +74,6 @@ class GridConfig(CommonSettings, ):
 
     @staticmethod
     def _validate_dimension(v, field_name):
-        """Helper method to validate dimension values."""
         if v is not None:
             if field_name == 'size':
                 assert 2 <= v <= 4096, f"{field_name} must be in [2, 4096]"
@@ -85,17 +101,18 @@ class GridConfig(CommonSettings, ):
     @validator('agents_xy')
     def agents_xy_validation(cls, v, values):
         if v is not None:
-            width = values.get('width') or values.get('size', 8)
-            height = values.get('height') or values.get('size', 8)
-            cls.check_positions(v, width, height)
+            if not isinstance(v, (list, tuple)):
+                raise ValueError("agents_xy must be a list")
+            for position in v:
+                if not isinstance(position, (list, tuple)) or len(position) != 2:
+                    raise ValueError("Position must be a list/tuple of length 2")
+                if not all(isinstance(coord, int) for coord in position):
+                    raise ValueError("Position coordinates must be integers")
         return v
 
     @validator('targets_xy')
     def targets_xy_validation(cls, v, values):
         if v is not None:
-            width = values.get('width') or values.get('size', 8)
-            height = values.get('height') or values.get('size', 8)
-            
             if not v or not isinstance(v, (list, tuple)):
                 raise ValueError("targets_xy must be a list")
             
@@ -107,12 +124,20 @@ class GridConfig(CommonSettings, ):
                 for agent_goals in v:
                     if not isinstance(agent_goals, (list, tuple)) or len(agent_goals) < 2:
                         raise ValueError("Each agent must have at least two goals in the sequence")
-                    cls.check_positions(agent_goals, width, height)
+                    for position in agent_goals:
+                        if not isinstance(position, (list, tuple)) or len(position) != 2:
+                            raise ValueError("Position must be a list/tuple of length 2")
+                        if not all(isinstance(coord, int) for coord in position):
+                            raise ValueError("Position coordinates must be integers")
             else:
                 on_target = values.get('on_target', 'finish')
                 if on_target == 'restart':
                     raise ValueError("on_target='restart' requires goal sequences, not single goals. Use format: targets_xy: [[[x1,y1],[x2,y2]], [[x3,y3],[x4,y4]]]")
-                cls.check_positions(v, width, height)
+                for position in v:
+                    if not isinstance(position, (list, tuple)) or len(position) != 2:
+                        raise ValueError("Position must be a list/tuple of length 2")
+                    if not all(isinstance(coord, int) for coord in position):
+                        raise ValueError("Position coordinates must be integers")
         return v
 
     @staticmethod
@@ -124,7 +149,7 @@ class GridConfig(CommonSettings, ):
             if not isinstance(x, int) or not isinstance(y, int):
                 raise ValueError("Position coordinates must be integers")
             if not (0 <= x < height and 0 <= y < width):
-                raise IndexError("Position is out of bounds!")
+                raise IndexError(f"Position is out of bounds! {position} is not in [{0}, {height}] x [{0}, {width}]")
 
 
     @validator('num_agents', always=True)
