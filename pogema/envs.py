@@ -311,11 +311,11 @@ class PogemaLifeLong(Pogema):
                         for sequence in self.grid_config.targets_xy]
         
         sequences = []
-        temp_generators = []
-        for i in range(self.grid_config.num_agents):
-            temp_seed = self.random_generators[i].bit_generator.state['state']['state']
-            temp_generators.append(np.random.default_rng(temp_seed))
-        
+
+        main_rng = np.random.default_rng(self.grid_config.seed)
+        seeds = main_rng.integers(np.iinfo(np.int32).max, size=self.grid_config.num_agents)
+        temp_generators = [np.random.default_rng(seed) for seed in seeds]
+
         for agent_idx in range(self.grid_config.num_agents):
             agent_sequence = []
             start_pos = self.get_agents_xy(ignore_borders=ignore_borders)[agent_idx]
@@ -330,7 +330,7 @@ class PogemaLifeLong(Pogema):
                                    current_pos[1] + self.grid_config.obs_radius)
                 else:
                     generator_pos = tuple(current_pos)
-                
+
                 if self.grid_config.possible_targets_xy is not None:
                     new_goal = generate_from_possible_targets(
                         temp_generators[agent_idx], 
@@ -354,12 +354,11 @@ class PogemaLifeLong(Pogema):
                                        new_goal[1] - self.grid_config.obs_radius]
                     else:
                         goal_coords = list(new_goal)
-                
+
                 agent_sequence.append(goal_coords)
                 total_distance += abs(current_pos[0] - goal_coords[0]) + abs(current_pos[1] - goal_coords[1])
                 current_pos = goal_coords
             sequences.append(agent_sequence)
-        
         return sequences
 
     def reset(self, seed: Optional[int] = None, return_info: bool = True, options: Optional[dict] = None):
