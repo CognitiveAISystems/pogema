@@ -72,7 +72,6 @@ class RegisteredGrid:
                 self.targets_xy.append([x, y])
         else:
             self.targets_xy = agents_targets
-        global GRID_STR_REGISTRY
         if in_registry(name):
             raise ValueError(f"Grid with name {self.name} already registered!")
         check_grid(self.obstacles, self.agents_xy, self.targets_xy)
@@ -93,6 +92,7 @@ class RegisteredGrid:
 
 
 def register_grid(rg: RegisteredGrid):
+    global GRID_STR_REGISTRY
     if in_registry(rg.name):
         raise KeyError(f"Grid with name {rg.name} already registered")
     GRID_STR_REGISTRY[rg.name] = rg
