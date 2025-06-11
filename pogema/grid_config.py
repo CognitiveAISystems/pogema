@@ -263,3 +263,17 @@ class GridConfig(CommonSettings, ):
             possible_agents_xy, possible_targets_xy = None, None
 
         return obstacles, agents_xy, targets_xy, possible_agents_xy, possible_targets_xy
+
+    def update_config(self, **kwargs):
+        current_values = self.dict()
+        
+        if 'size' in kwargs:
+            current_values.pop('width', None)
+            current_values.pop('height', None)
+        elif 'width' in kwargs or 'height' in kwargs:
+            current_values.pop('size', None)
+        current_values.update(kwargs)
+        new_instance = GridConfig(**current_values)
+        
+        for field_name, field_value in new_instance.__dict__.items():
+            setattr(self, field_name, field_value)
