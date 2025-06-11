@@ -92,7 +92,6 @@ class RegisteredGrid:
 
 
 def register_grid(rg: RegisteredGrid):
-    global GRID_STR_REGISTRY
     if in_registry(rg.name):
         raise KeyError(f"Grid with name {rg.name} already registered")
     GRID_STR_REGISTRY[rg.name] = rg
