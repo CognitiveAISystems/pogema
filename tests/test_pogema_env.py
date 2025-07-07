@@ -247,10 +247,8 @@ def test_steps_per_second_throughput():
     for on_target in ['finish', 'nothing', 'restart']:
         for num_agents in [1, 32, 64]:
             for size in [32, 64]:
-                gc = GridConfig(obs_radius=5, seed=42, max_episode_steps=1024, )
-                gc.size = size
-                gc.num_agents = num_agents
-                gc.on_target = on_target
+                gc = GridConfig(obs_radius=5, seed=42, max_episode_steps=1024, 
+                              size=size, num_agents=num_agents, on_target=on_target)
 
                 start_time = time.monotonic()
                 run_episode(grid_config=gc)

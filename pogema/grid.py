@@ -25,7 +25,13 @@ class Grid:
         self.obstacles = self.obstacles.astype(np.int32)
 
         if grid_config.targets_xy and grid_config.agents_xy:
-            self.starts_xy, self.finishes_xy = grid_config.agents_xy, grid_config.targets_xy
+            self.starts_xy = grid_config.agents_xy
+
+            if isinstance(grid_config.targets_xy[0][0], (list, tuple)):
+                self.finishes_xy = [sequence[0] for sequence in grid_config.targets_xy]
+            else:
+                self.finishes_xy = grid_config.targets_xy
+                
             if len(self.starts_xy) != len(self.finishes_xy):
                 raise IndexError("Can't create task. Please provide agents_xy and targets_xy of the same size.")
             if grid_config.num_agents > len(self.starts_xy):
@@ -40,7 +46,7 @@ class Grid:
                                   Warning, stacklevel=2)
                 self.obstacles[s_x, s_y] = grid_config.FREE
                 if self.config.map is not None and self.obstacles[f_x, f_y] == grid_config.OBSTACLE:
-                    warnings.warn(f"There is an obstacle on a finish point ({s_x}, {s_y}), replacing with free cell",
+                    warnings.warn(f"There is an obstacle on a finish point ({f_x}, {f_y}), replacing with free cell",
                                   Warning, stacklevel=2)
                 self.obstacles[f_x, f_y] = grid_config.FREE
         elif grid_config.possible_agents_xy and grid_config.possible_targets_xy:
@@ -153,8 +159,8 @@ class Grid:
         x -= gc.obs_radius
         y -= gc.obs_radius
 
-        x /= gc.size - 1
-        y /= gc.size - 1
+        x /= gc.height - 1
+        y /= gc.width - 1
 
         return x, y
 
